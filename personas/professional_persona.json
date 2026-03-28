@@ -1,0 +1,67 @@
+{
+  "id": "persona_2_professional",
+  "name": "Mobile-First Lukas",
+  "persona_type": "Young Professional",
+  "segment": "High-income digitally fluent professional in Switzerland with reward-oriented payment mindset and frequent credit card usage",
+
+  "demographic_profile": {
+    "age": 32,
+    "life_stage": "Full-time employed, no children yet",
+    "household": "Couple, rented apartment in Zürich",
+    "income_level": "High — full-time urban professional, above national average",
+    "gross_income": "CHF 12,000–16,000/month (national avg CHF 9,927/month)",
+    "disposable_income": "Well above national avg of CHF 6,902/month",
+    "savings": "CHF 1,546/month national avg — professional likely higher",
+    "location": "Urban — Zürich",
+    "language": "German-speaking",
+    "population_cohort": "25–34 age group: 1,207,103 people in Switzerland (2024)"
+  },
+
+  "behavioral_profile": {
+    "primary_payment_method": "Mobile payment (Apple Pay, Twint) — ~40% of transactions",
+    "secondary_payment_method": "Credit card — ~35% of transactions",
+    "debit_card_usage": "Moderate — ~15%",
+    "cash_usage": "Minimal — ~10%",
+    "online_shopping": "Frequent — mobile dominant in distance business (69.1%)",
+    "neobank_usage": "Revolut for travel, Neon as supplement",
+    "avg_transaction_amount": "CHF 30–200",
+    "travel": "International several times per year",
+    "spending_flexibility": "High"
+  },
+
+  "spending_patterns": {
+    "groceries": "Credit card or Apple Pay",
+    "eating_out": "Credit card or Twint",
+    "public_transport": "Mobile app (SBB, half-fare card)",
+    "online_shopping": "Credit card or Apple Pay",
+    "travel_bookings": "Credit card (for insurance + rewards)",
+    "larger_purchases": "Credit card (avg CHF 71 transaction)"
+  },
+
+  "financial_behavior": {
+    "avoids_fixed_monthly_costs": false,
+    "preferred_payment_style": "Pay-later acceptable for rewards and insurance",
+    "attitude_toward_fees": "Acceptable if value is clear — will pay for quality",
+    "willingness_to_pay": "CHF 10–20/month if benefits justify"
+  },
+
+  "payment_mindset": {
+    "primary_reason_for_payment_choice": ["habit", "speed", "rewards"],
+    "digital_comfort": "Very high — early adopter",
+    "attitude_toward_fintech": "Open to premium fintech and neobanks",
+    "values": ["cashback", "travel insurance", "purchase protection", "no foreign fees"]
+  },
+
+  "price_sensitivity": "Low",
+
+  "preferences": [
+    "Cashback on everyday and travel spending",
+    "Travel insurance included",
+    "No foreign transaction fees",
+    "Apple Pay / Google Pay compatible",
+    "Premium service and transparent rewards"
+  ],
+
+  "brand_loyalty": "Medium — values reliability and perks",
+  "tech_adoption": "Early adopter"
+}

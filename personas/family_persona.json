@@ -1,0 +1,67 @@
+{
+  "id": "persona_3_family",
+  "name": "Value-Smart Sandra",
+  "persona_type": "Family Parent",
+  "segment": "Middle-income Swiss parent with budget-conscious spending, balanced payment behavior and stability-oriented mindset",
+
+  "demographic_profile": {
+    "age": 44,
+    "life_stage": "Employed, married, 2 children",
+    "household": "Family home, Bern suburb",
+    "income_level": "Medium-high — dual income household",
+    "gross_income": "CHF 10,000–13,000/month (national avg CHF 9,927/month)",
+    "disposable_income": "CHF 6,902/month national avg — reduced by family expenses",
+    "key_fixed_costs": "Housing CHF 1,374 + Food CHF 629 + Transport CHF 761 + Health CHF 221 = CHF 2,985/month",
+    "savings": "CHF 1,546/month national avg — carefully managed",
+    "location": "Suburban — Bern area",
+    "language": "German-speaking",
+    "population_cohort": "35–54 age group: 2,545,227 people in Switzerland (2024)"
+  },
+
+  "behavioral_profile": {
+    "primary_payment_method": "Debit card — dominant at supermarkets and large retailers",
+    "cash_usage": "Medium — for small retailers, cafés, children's pocket money",
+    "credit_card_usage": "Selective — larger purchases, family holidays",
+    "mobile_payment": "Transport and occasional use (SBB, buses)",
+    "online_banking": "eBill for invoices and recurring payments",
+    "avg_transaction_amount": "CHF 20–150",
+    "spending_flexibility": "Medium — constrained by family fixed costs"
+  },
+
+  "spending_patterns": {
+    "groceries": "Debit card (Migros, Coop)",
+    "eating_out": "Cash or debit card",
+    "public_transport": "Mobile app or half-fare card",
+    "online_shopping": "Debit card or credit card",
+    "family_holidays": "Credit card (for insurance + larger amounts)",
+    "recurring_bills": "eBill / online banking"
+  },
+
+  "financial_behavior": {
+    "avoids_fixed_monthly_costs": true,
+    "preferred_payment_style": "Pay-now for daily spending, credit card for planned larger purchases",
+    "attitude_toward_fees": "Cautious — wants clear justification before paying fees",
+    "willingness_to_pay": "CHF 5–10/month if family benefits are tangible",
+    "cash_attitude": "Values cash availability — 95% of Swiss want cash to remain"
+  },
+
+  "payment_mindset": {
+    "primary_reason_for_payment_choice": ["habit", "amount", "security"],
+    "digital_comfort": "Medium-high",
+    "attitude_toward_fintech": "Cautious — prefers established banks",
+    "values": ["security", "purchase protection", "family cashback", "simplicity", "reliability"]
+  },
+
+  "price_sensitivity": "Medium",
+
+  "preferences": [
+    "Family cashback on groceries and supermarkets",
+    "Purchase protection for larger items",
+    "Clear and simple fee structure",
+    "Reliable customer service",
+    "eBill and online banking integration"
+  ],
+
+  "brand_loyalty": "Medium-high — values stability and trust",
+  "tech_adoption": "Moderate — adopts when proven useful"
+}

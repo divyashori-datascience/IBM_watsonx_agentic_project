@@ -1,0 +1,62 @@
+{
+  "id": "persona_1_student",
+  "name": "Campus Felix",
+  "persona_type": "Student",
+  "segment": "Low-income young student in Switzerland with high digital payment usage and strong price sensitivity",
+
+  "demographic_profile": {
+    "age": 22,
+    "life_stage": "University student",
+    "household": "Shared apartment (WG)",
+    "income_level": "Low - part-time income, well below national average",
+    "disposable_income": "CHF 800–2,000/month (national average CHF 6,902/month)",
+    "location": "Urban — Zürich, Bern, Basel",
+    "language": "German-speaking"
+  },
+
+  "behavioral_profile": {
+    "primary_payment_method": "Mobile apps (Twint, Apple Pay) — ~55% of transactions",
+    "secondary_payment_method": "Debit card — ~30% of transactions",
+    "cash_usage": "Minimal — ~10%, rarely carries more than CHF 20",
+    "credit_card_usage": "Rarely — ~5%",
+    "p2p_payments": "Twint dominant (splitting bills, rent)",
+    "neobank_usage": "Uses Revolut or Neon as supplement",
+    "avg_transaction_amount": "CHF 5–50",
+    "spending_flexibility": "Low"
+  },
+
+  "spending_patterns": {
+    "groceries": "Debit card (Migros, Lidl, Coop)",
+    "eating_out": "Cash or Twint",
+    "public_transport": "Mobile app (SBB Easy Ride)",
+    "online_shopping": "Mobile app or debit",
+    "p2p_split_bills": "Twint"
+  },
+
+  "financial_behavior": {
+    "avoids_fixed_monthly_costs": true,
+    "preferred_payment_style": "Pay-now over pay-later",
+    "attitude_toward_fees": "Strongly negative — avoids any paid service",
+    "cash_in_wallet": "Rarely — below CHF 20"
+  },
+
+  "payment_mindset": {
+    "primary_reason_for_mobile": ["habit", "speed"],
+    "digital_comfort": "High — early adopter",
+    "attitude_toward_fintech": "Open to neobanks and new apps",
+    "avoids": ["hidden costs", "complex products", "annual fees"]
+  },
+
+  "price_sensitivity": "Very High",
+
+  "preferences": [
+    "Zero or low fees",
+    "Mobile-first (Twint, Apple Pay)",
+    "Transparent pricing",
+    "Neobank-friendly (Revolut, Neon)",
+    "Simple usage"
+  ],
+
+  "brand_loyalty": "Low — will switch for better deal",
+  "tech_adoption": "Early adopter"
+}

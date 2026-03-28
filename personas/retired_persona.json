@@ -1,0 +1,69 @@
+{
+  "id": "persona_4_retired",
+  "name": "Trust-First Peter",
+  "persona_type": "Retiree",
+  "segment": "Security-oriented retired Swiss with stable pension income, strong cash preference and low digital adoption",
+
+  "demographic_profile": {
+    "age": 65,
+    "life_stage": "Retired, married, children grown up",
+    "household": "Couple, own home in rural Aargau",
+    "income_level": "Stable pension — fixed income",
+    "ahv_pension_1st_pillar": "CHF 951/month",
+    "occupational_pension_2nd_pillar": "CHF 721/month",
+    "total_pensions_benefits": "CHF 2,059/month (national avg)",
+    "disposable_income": "Approx. CHF 4,000–5,500/month (retiree household, below national avg of CHF 6,902)",
+    "health_expenditure": "CHF 221/month national avg — retiree significantly higher",
+    "location": "Rural — Aargau",
+    "language": "German-speaking",
+    "population_cohort": "65–79 age group: 1,245,824 people in Switzerland (2024)"
+  },
+
+  "behavioral_profile": {
+    "primary_payment_method": "Cash — dominant, especially for daily spending",
+    "secondary_payment_method": "Debit card (PostFinance) for supermarkets and larger purchases",
+    "online_banking": "E-banking for bill payments",
+    "mobile_payment": "Very limited — 55+ group lowest mobile adoption",
+    "credit_card_usage": "Rarely — avoids debt and credit products",
+    "avg_transaction_amount": "CHF 10–80",
+    "spending_flexibility": "Low — fixed pension income"
+  },
+
+  "spending_patterns": {
+    "groceries": "Cash or PostFinance debit card",
+    "eating_out": "Cash",
+    "transport": "Cash or half-fare card",
+    "bills_utilities": "E-banking / postal payments",
+    "health_costs": "Direct bank transfer or cash",
+    "larger_purchases": "Debit card or bank transfer"
+  },
+
+  "financial_behavior": {
+    "avoids_fixed_monthly_costs": true,
+    "preferred_payment_style": "Pay-now, pay cash where possible",
+    "attitude_toward_fees": "Resistant — fixed income, dislikes unnecessary costs",
+    "attitude_toward_atm_fees": "Frustrated — almost half of Swiss find ATM fees unreasonable",
+    "cash_attitude": "Strongly values cash — 68% of Swiss want cash unchanged, Peter firmly in this group",
+    "willingness_to_pay": "CHF 0–5/month maximum, only if absolutely necessary"
+  },
+
+  "payment_mindset": {
+    "primary_reason_for_cash": ["spending overview", "privacy", "habit"],
+    "digital_comfort": "Low — uses e-banking but avoids new apps",
+    "attitude_toward_fintech": "Skeptical — prefers PostFinance and cantonal banks",
+    "values": ["security", "simplicity", "cash availability", "trust", "fraud protection"]
+  },
+
+  "price_sensitivity": "Medium-High",
+
+  "preferences": [
+    "Simple and secure banking",
+    "Cash availability nearby",
+    "Reliable phone customer service",
+    "No complex digital requirements",
+    "Transparent and stable fees"
+  ],
+
+  "brand_loyalty": "High — loyal to PostFinance and cantonal banks",
+  "tech_adoption": "Low — adopts only when necessary"
+}
