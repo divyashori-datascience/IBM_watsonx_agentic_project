@@ -1,0 +1,46 @@
+{
+  "persona": "professional",
+  "name": "Mobile-First Lukas",
+  "model": "gpt-4o",
+  "timestamp": "2026-03-29",
+  "summary": "Lukas is the premium segment. He will pay CHF 25–30/month for a card that genuinely delivers — zero foreign fees, comprehensive travel insurance, and automatic cashback. The pitch is not 'save money' but 'get more value from what you already spend.' Visa Infinite or equivalent is the right product tier.",
+  "key_metrics": {
+    "max_monthly_fee_chf": "25–30",
+    "top_feature": "No foreign fees + travel insurance combo",
+    "switching_intent": "high",
+    "twint_loyalty": "medium — already uses credit card",
+    "welcome_bonus_effectiveness": "low — not a decision driver"
+  },
+  "category_insights": {
+    "price_sensitivity": {
+      "finding": "Value-driven, not price-sensitive. Immediately chooses CHF 8/month over 1.5% foreign fee — calculates break-even instinctively. Will pay for quality if the numbers work.",
+      "key_quote": "The math clearly favors zero foreign fees.",
+      "tags": ["picks CHF 8/mo over variable fee", "evaluates CHF 5/mo on merit", "value-driven not price-driven"]
+    },
+    "feature_preference": {
+      "finding": "No foreign fees + travel insurance is the strongest combination — continuous value for a frequent traveller. Cashback attractive only if uncapped and simple.",
+      "key_quote": "Foreign fees and insurance have continuous value.",
+      "tags": ["no foreign fees + travel insurance wins", "2% cashback secondary", "welcome bonus not a driver"]
+    },
+    "behavior_switching": {
+      "finding": "Will switch if rewards are automatic and frictionless. Already keeps a credit card active — the bar is raising the value proposition, not overcoming resistance.",
+      "key_quote": "If I clearly see monthly net gains without changing behavior, I would switch.",
+      "tags": ["already credit card user", "high switching readiness", "no points systems or thresholds"]
+    },
+    "trade_off": {
+      "finding": "Accepts net gain instantly — no hesitation at CHF 15 save / CHF 10 fee. Reliability matters more than the amount. Rejects welcome bonus as mathematically negative.",
+      "key_quote": "That is a clear net gain. As long as savings are consistent, I would accept without hesitation.",
+      "tags": ["rejects CHF 50 bonus / CHF 72 cost", "accepts reliable net gain immediately", "reliability over complexity"]
+    },
+    "willingness_to_pay": {
+      "finding": "CHF 25–30/month is the ceiling, conditional on strong travel insurance, zero foreign fees, and at least CHF 30–40 equivalent monthly value. Would keep a free card as functional backup.",
+      "key_quote": "I would go up to CHF 25–30 per month, but only if the value clearly exceeds that.",
+      "tags": ["max CHF 25–30/mo", "premium product tier", "Visa Infinite appropriate", "free card = functional backup"]
+    }
+  },
+  "visa_recommendation": {
+    "viable_product": "Premium Visa card — CHF 20–25/month with zero foreign fees + comprehensive travel insurance + 2% uncapped cashback",
+    "avoid": ["welcome bonuses as primary hook", "points systems with thresholds", "caps on cashback", "anything requiring manual tracking"],
+    "acquisition_trigger": "Automatic value delivery — no effort required from the cardholder"
+  }
+}
