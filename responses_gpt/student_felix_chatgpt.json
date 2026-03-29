@@ -1,0 +1,68 @@
+{
+  "persona": "student",
+  "provider": "chatgpt-manual",
+  "model": "gpt-4o",
+  "timestamp": "2026-03-29T16:33:00",
+  "results": [
+    {
+      "question_id": "Q1",
+      "category": "price_sensitivity",
+      "question": "You receive two Visa card offers: Option A is free but charges 1.5% on every foreign transaction. Option B costs CHF 8/month but has zero foreign fees. You travel to Europe 2–3 times a year. Which do you pick and why?",
+      "answer": "I'd go with the free one honestly. I only travel a few times a year, so 1.5% is probably still cheaper than paying CHF 8 every month. For me, fixed costs hurt more than occasional fees."
+    },
+    {
+      "question_id": "Q2",
+      "category": "price_sensitivity",
+      "question": "Your bank sends you a message: your free debit card will be replaced by a new Visa card at CHF 5/month. You can opt out and keep a basic account. What do you do?",
+      "answer": "I'd definitely opt out. CHF 5/month is already too much for me if I don't really need it. I'm happy with Twint and my debit card, so I don't see the point."
+    },
+    {
+      "question_id": "Q3",
+      "category": "feature_preference",
+      "question": "A new Visa card offers 1% cashback on all Migros and Coop purchases. The monthly fee is CHF 4. Would this change how you pay at the supermarket?",
+      "answer": "Maybe, but only if the cashback actually beats the CHF 4 fee. I spend quite a bit at Migros and Coop, so it could work, but I'd calculate it first. If it's not clearly saving me money, I'd just stick with Twint."
+    },
+    {
+      "question_id": "Q4",
+      "category": "feature_preference",
+      "question": "Which of these would make you most likely to get a Visa card: (a) 2% cashback, (b) travel insurance included, (c) no foreign transaction fees, (d) a CHF 100 welcome bonus?",
+      "answer": "Honestly (a) 2% cashback. That's something I'd actually use every week, especially for groceries. The others are nice but don't matter much for my daily life."
+    },
+    {
+      "question_id": "Q5",
+      "category": "behavior_switching",
+      "question": "You currently use Twint for almost everything. A Visa card promises the same speed but adds rewards. What would it take for you to actually switch?",
+      "answer": "It would need to be free and clearly save me money every month. Like real cashback I can see, not some complicated points system. Otherwise I'll just stay with Twint because it already works perfectly."
+    },
+    {
+      "question_id": "Q6",
+      "category": "behavior_switching",
+      "question": "Have you ever been in a situation where Twint or your debit card was not accepted? What did you do — and would a credit card have solved it?",
+      "answer": "Yeah sometimes online or abroad, Twint didn't work. I just used my debit card or skipped it honestly. A credit card might help there, but it's not often enough for me to pay monthly for it."
+    },
+    {
+      "question_id": "Q7",
+      "category": "trade_off",
+      "question": "A Visa card gives you CHF 50 welcome bonus but requires CHF 6/month for 12 months — total cost CHF 72. Is that a good deal to you?",
+      "answer": "No, that's a bad deal. I'd pay more than I get back, so it doesn't make sense. I'd rather just not get it at all."
+    },
+    {
+      "question_id": "Q8",
+      "category": "trade_off",
+      "question": "If a Visa card saved you CHF 15/month through cashback and discounts, but cost CHF 10/month in fees, would you see that as a net gain or still feel reluctant?",
+      "answer": "It's a net gain, but I'd still feel a bit hesitant. I'd want to be sure that CHF 15 is realistic every month, not just marketing. If it's consistent, then yeah I'd consider it."
+    },
+    {
+      "question_id": "Q9",
+      "category": "willingness_to_pay",
+      "question": "What is the absolute maximum monthly fee you would accept for a Visa card — and only under what conditions?",
+      "answer": "Max CHF 5, and only if I clearly earn more back than I pay. Like guaranteed cashback on stuff I already buy. Otherwise I just don't see the point."
+    },
+    {
+      "question_id": "Q10",
+      "category": "willingness_to_pay",
+      "question": "If a Visa card were completely free forever but offered no rewards, would you still get one? What would be the point for you?",
+      "answer": "Yeah, I'd probably get it as a backup. For online payments or when Twint doesn't work, it could be useful. But I wouldn't use it much day to day."
+    }
+  ]
+}
