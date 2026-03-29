@@ -40,7 +40,7 @@ load_env()
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
 BASE_DIR      = Path(__file__).parent.parent
-PROMPTS_DIR   = BASE_DIR / "promts"
+PROMPTS_DIR   = BASE_DIR / "prompts"
 SURVEY_FILE   = BASE_DIR / "survey" / "survey_questions.json"
 RESPONSES_DIR = BASE_DIR / "responses"
 RESPONSES_DIR.mkdir(exist_ok=True)
