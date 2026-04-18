@@ -20,6 +20,7 @@ import argparse
 import requests
 from datetime import datetime
 from pathlib import Path
+import time
 
 # ── Load .env automatically ───────────────────────────────────────────────────
 
@@ -74,17 +75,13 @@ def get_iam_token() -> str:
     return _iam_token_cache
 
 # ── LLM Providers ─────────────────────────────────────────────────────────────
-
 def call_watsonx(system_prompt: str, messages: list) -> str:
-    """
-    Calls watsonx.ai REST API directly — no WML instance required.
-    """
+    import time
     token      = get_iam_token()
     url        = os.environ["WATSONX_URL"].rstrip("/")
     project_id = os.environ["WATSONX_PROJECT_ID"]
-    model_id   = os.environ.get("WATSONX_MODEL_ID", "meta-llama/llama-3-70b-instruct")
+    model_id   = os.environ.get("WATSONX_MODEL_ID")
 
-    # Build prompt in Llama chat format
     prompt = f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n"
     for msg in messages:
         if msg["role"] == "user":
@@ -103,19 +100,28 @@ def call_watsonx(system_prompt: str, messages: list) -> str:
         },
     }
 
-    resp = requests.post(
-        f"{url}/ml/v1/text/generation?version=2023-05-29",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type":  "application/json",
-        },
-        json=payload,
-        timeout=60,
-    )
+    for attempt in range(5):
+        resp = requests.post(
+            f"{url}/ml/v1/text/generation?version=2023-05-29",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type":  "application/json",
+            },
+            json=payload,
+            timeout=60,
+        )
+        if resp.status_code == 429:
+            wait = 3 * (attempt + 1)
+            print(f"Rate limit, {wait}s bekleniyor...")
+            time.sleep(wait)
+            continue
+        print("STATUS:", resp.status_code)
+        resp.raise_for_status()
+        return resp.json()["results"][0]["generated_text"].strip()
+
     resp.raise_for_status()
-    return resp.json()["results"][0]["generated_text"].strip()
 
-
+"""
 def call_anthropic(system_prompt: str, messages: list) -> str:
     import anthropic
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
@@ -137,7 +143,7 @@ def call_openai(system_prompt: str, messages: list) -> str:
         messages=[{"role": "system", "content": system_prompt}] + messages,
     )
     return response.choices[0].message.content
-
+"""
 
 def call_mock(system_prompt: str, messages: list) -> str:
     last_question = messages[-1]["content"] if messages else "?"
@@ -152,8 +158,8 @@ def call_mock(system_prompt: str, messages: list) -> str:
 
 PROVIDERS = {
     "watsonx":   call_watsonx,
-    "anthropic": call_anthropic,
-    "openai":    call_openai,
+    # "anthropic": call_anthropic,
+    # "openai":    call_openai,
     "mock":      call_mock,
 }
 
@@ -218,6 +224,7 @@ def run_survey(persona_key: str, provider: str) -> dict:
         history.append({"question": q_text, "answer": answer})
 
         print(f"A: {answer}\n")
+        time.sleep(1)  # rate limit 
         results.append({
             "question_id": q_id,
             "category":    q_category,
