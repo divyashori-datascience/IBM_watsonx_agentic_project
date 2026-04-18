@@ -17,7 +17,7 @@ Usage:
 import os
 import json
 import argparse
-import requests
+import requests # type: ignore
 from datetime import datetime
 from pathlib import Path
 import time
