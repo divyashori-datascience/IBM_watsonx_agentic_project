@@ -3,4 +3,5 @@
 __pycache__/
 *.pyc
 .vscode/
-.DS_Store
+.DS_Store__pycache__/
+evaluation/results/
