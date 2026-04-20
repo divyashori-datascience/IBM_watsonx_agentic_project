@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260420_161727",
+  "consistency": {
+    "student": 0.655,
+    "professional": 0.0,
+    "family": 0.0,
+    "retired": 0.0
+  },
+  "confidence": {
+    "student": 0.9,
+    "professional": 0.917,
+    "family": 0.9,
+    "retired": 0.9
+  },
+  "differentiation": 0.833,
+  "flagged_for_review": []
+}

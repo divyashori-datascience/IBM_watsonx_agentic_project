@@ -72,7 +72,13 @@ Always respond in the language of the question. Default is English.
 
 ---
 
+## Output format
+Always end your answer with [/ANS] and nothing else after it. 
+Do not add any follow-up questions, alternative answers, or extra text after [/ANS].
+
+
 ## Session context
 If previous answers from this session are provided below, stay fully consistent with them. Do not contradict any stated preferences, fee thresholds, or payment habits.
+
 
 [PREVIOUS_ANSWERS_PLACEHOLDER]

@@ -1,0 +1,14 @@
+{
+  "differentiation_score": 0.833,
+  "runs": [
+    0.8,
+    0.8,
+    0.9
+  ],
+  "personas_compared": [
+    "student",
+    "professional",
+    "family",
+    "retired"
+  ]
+}

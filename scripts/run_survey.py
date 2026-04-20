@@ -90,16 +90,16 @@ def call_watsonx(system_prompt: str, messages: list) -> str:
             prompt += f"{msg['content']} </s><s>[INST] "
 
     payload = {
-        "model_id":   model_id,
-        "project_id": project_id,
-        "input":      prompt,
-        "parameters": {
-            "max_new_tokens":    512,
-            "temperature":       0.7,
-            "repetition_penalty": 1.1,
-        },
-    }
-
+    "model_id":   model_id,
+    "project_id": project_id,
+    "input":      prompt,
+    "parameters": {
+        "max_new_tokens":    512,
+        "temperature":       0.7,
+        "repetition_penalty": 1.1,
+        "stop_sequences": ["<</", "[/INST]", "</s>", "[/ANS]"],
+    },
+}
     for attempt in range(5):
         resp = requests.post(
             f"{url}/ml/v1/text/generation?version=2023-05-29",
@@ -117,8 +117,15 @@ def call_watsonx(system_prompt: str, messages: list) -> str:
             continue
         print("STATUS:", resp.status_code)
         resp.raise_for_status()
-        return resp.json()["results"][0]["generated_text"].strip()
-
+        raw = resp.json()["results"][0]["generated_text"].strip()
+        if "[/ANS]" in raw:
+            raw = raw.split("[/ANS]")[0]
+        elif "<<ANS>>" in raw:
+            raw = raw.split("<<ANS>>")[0]
+        elif "</s>" in raw:
+            raw = raw.split("</s>")[0]
+        return raw.strip()
+    
     resp.raise_for_status()
 
 """
@@ -219,17 +226,28 @@ def run_survey(persona_key: str, provider: str) -> dict:
 
         system_prompt = inject_session_context(system_prompt_template, history)
         conversation.append({"role": "user", "content": q_text})
-        answer = llm_call(system_prompt, conversation)
-        conversation.append({"role": "assistant", "content": answer})
-        history.append({"question": q_text, "answer": answer})
-
-        print(f"A: {answer}\n")
-        time.sleep(1)  # rate limit 
+        # Ask each question 3 times for consistency evaluation
+        answers = []
+        for run in range(3):
+            print(f"  Run {run+1}/3...")
+            answer = llm_call(system_prompt, conversation)
+            answers.append(answer)
+            time.sleep(1)  # rate limit
+        
+        # Use first answer for conversation history to keep context clean
+        conversation.append({"role": "assistant", "content": answers[0]})
+        history.append({"question": q_text, "answer": answers[0]})
+        
+        print(f"A1: {answers[0]}\n")
+        print(f"A2: {answers[1]}\n")
+        print(f"A3: {answers[2]}\n")
+        
         results.append({
             "question_id": q_id,
             "category":    q_category,
             "question":    q_text,
-            "answer":      answer,
+            "answer":      answers[0],   # primary answer for analysis
+            "answers":     answers,       # all 3 runs for consistency check
         })
 
     return {
