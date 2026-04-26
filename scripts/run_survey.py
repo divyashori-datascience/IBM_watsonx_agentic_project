@@ -11,7 +11,7 @@ Usage:
     WATSONX_URL=https://eu-de.ml.cloud.ibm.com
     WATSONX_PROJECT_ID=your_project_id
     WATSONX_API_KEY=your_api_key
-    WATSONX_MODEL_ID=meta-llama/llama-3-70b-instruct  (optional)
+    WATSONX_MODEL_ID=meta-llama/llama-3-3-70b-instruct  (optional)
 """
 
 import os
@@ -21,6 +21,11 @@ import requests # type: ignore
 from datetime import datetime
 from pathlib import Path
 import time
+
+# ── RAG ───────────────────────────────────────────────────────────────────────
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from rag.retriever import retrieve_context
 
 # ── Load .env automatically ───────────────────────────────────────────────────
 
@@ -47,10 +52,11 @@ RESPONSES_DIR = BASE_DIR / "responses"
 RESPONSES_DIR.mkdir(exist_ok=True)
 
 PERSONA_PROMPT_MAP = {
-    "student":      "student_prompt_v2.txt",
-    "professional": "professional_prompt_v2.txt",
-    "family":       "family_prompt_v2.txt",
-    "retired":      "retired_prompt_v2.txt",
+    "student":      "student_prompt_v2.txt",      # Felix
+    "professional": "professional_prompt_v2.txt",  # Lukas
+    "mittelstand":  "mittelstand_prompt.txt",      # Anna 
+    "family":       "family_prompt_v2.txt",        # Sandra
+    "retired":      "retired_prompt_v2.txt",       # Peter
 }
 
 # ── IAM Token ─────────────────────────────────────────────────────────────────
@@ -206,7 +212,7 @@ def run_survey(persona_key: str, provider: str) -> dict:
     history    = []
     conversation = []
     results    = []
-    model_name = os.environ.get("WATSONX_MODEL_ID", "meta-llama/llama-3-70b-instruct") \
+    model_name = os.environ.get("WATSONX_MODEL_ID", "meta-llama/llama-3-3-70b-instruct") \
                  if provider == "watsonx" else provider
 
     print(f"\n{'─' * 60}")
@@ -225,7 +231,14 @@ def run_survey(persona_key: str, provider: str) -> dict:
         print(f"Q: {q_text}")
 
         system_prompt = inject_session_context(system_prompt_template, history)
+
+        # ── RAG: inject relevant Swiss consumer data ───────────────────────
+        rag_context = retrieve_context(persona_key, q_text)
+        if rag_context:
+            system_prompt = system_prompt + "\n\n" + rag_context
+
         conversation.append({"role": "user", "content": q_text})
+
         # Ask each question 3 times for consistency evaluation
         answers = []
         for run in range(3):
