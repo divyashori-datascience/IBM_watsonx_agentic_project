@@ -108,7 +108,6 @@ project-watsonx-group29/
 │   └── run_survey.py
 ├── evaluation/
 ├── analyst/
-│   ├── __init__.py
 │   └── analyst_agent.py     ← generates insight JSONs from persona responses
 ├── personas/
 ├── prompts/
