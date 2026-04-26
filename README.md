@@ -58,11 +58,18 @@ python3 orchestrator/orchestrator.py --provider watsonx --topic "Visa card prici
 python3 orchestrator/orchestrator.py --provider mock --topic "Mobile payment adoption"
 ```
 
-**5. Run survey or evaluation separately:**
+**5. Run with specific personas only (faster for testing):**
+```bash
+python3 orchestrator/orchestrator.py --provider watsonx --topic "Visa card pricing in Switzerland" --personas family mittelstand
+```
+
+**6. Run survey or evaluation separately:**
 ```bash
 python3 scripts/run_survey.py --all --provider watsonx
 python3 evaluation/run_evaluation.py
 ```
+
+**Expected runtime:** ~5-8 minutes for 2 personas, ~15-25 minutes for all 5 personas. WatsonX API response time is the bottleneck, not local hardware.
 
 ---
 

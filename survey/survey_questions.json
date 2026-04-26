@@ -1,64 +1,29 @@
 {
-  "survey_title": "Visa Card & Payment Behavior Survey",
-  "use_case": "Card and payment behavior simulation — Swiss consumer segments",
-  "total_questions": 10,
-  "categories": {
-    "price_sensitivity": ["Q1", "Q2"],
-    "feature_preference": ["Q3", "Q4"],
-    "behavior_switching": ["Q5", "Q6"],
-    "trade_off": ["Q7", "Q8"],
-    "willingness_to_pay": ["Q9", "Q10"]
-  },
+  "survey_title": "Survey — Visa card pricing in Switzerland",
+  "generated_topic": "Visa card pricing in Switzerland",
+  "generated_at": "2026-04-27T00:10:34.136544",
+  "provider": "watsonx",
+  "total_questions": 4,
   "questions": [
     {
       "id": "Q1",
       "category": "price_sensitivity",
-      "text": "You receive two Visa card offers: Option A is free but charges 1.5% on every foreign transaction. Option B costs CHF 8/month but has zero foreign fees. You travel to Europe 2–3 times a year. Which do you pick and why?"
+      "text": "How much would you be willing to pay per month as a fixed fee for your Visa card?"
     },
     {
       "id": "Q2",
-      "category": "price_sensitivity",
-      "text": "Your bank sends you a message: your free debit card will be replaced by a new Visa card at CHF 5/month. You can opt out and keep a basic account. What do you do?"
+      "category": "feature_preference",
+      "text": "Which of the following features would make you more likely to choose one Visa card over another: cashback on grocery purchases, travel insurance, purchase protection, or concierge service?"
     },
     {
       "id": "Q3",
-      "category": "feature_preference",
-      "text": "A new Visa card offers 1% cashback on all Migros and Coop purchases. The monthly fee is CHF 4. Would this change how you pay at the supermarket?"
+      "category": "behavior_switching",
+      "text": "If Twint offered all the same benefits as your current Visa card, how likely would you be to switch from using your Visa card to Twint for daily transactions?"
     },
     {
       "id": "Q4",
-      "category": "feature_preference",
-      "text": "Which of these would make you most likely to get a Visa card: (a) 2% cashback, (b) travel insurance included, (c) no foreign transaction fees, (d) a CHF 100 welcome bonus?"
-    },
-    {
-      "id": "Q5",
-      "category": "behavior_switching",
-      "text": "You currently use Twint for almost everything. A Visa card promises the same speed but adds rewards. What would it take for you to actually switch?"
-    },
-    {
-      "id": "Q6",
-      "category": "behavior_switching",
-      "text": "Have you ever been in a situation where Twint or your debit card was not accepted? What did you do — and would a credit card have solved it?"
-    },
-    {
-      "id": "Q7",
       "category": "trade_off",
-      "text": "A Visa card gives you CHF 50 welcome bonus but requires CHF 6/month for 12 months — total cost CHF 72. Is that a good deal to you?"
-    },
-    {
-      "id": "Q8",
-      "category": "trade_off",
-      "text": "If a Visa card saved you CHF 15/month through cashback and discounts, but cost CHF 10/month in fees, would you see that as a net gain or still feel reluctant?"
-    },
-    {
-      "id": "Q9",
-      "category": "willingness_to_pay",
-      "text": "What is the absolute maximum monthly fee you would accept for a Visa card — and only under what conditions?"
-    },
-    {
-      "id": "Q10",
-      "category": "willingness_to_pay",
-      "text": "If a Visa card were completely free forever but offered no rewards, would you still get one? What would be the point for you?"
+      "text": "Would you prefer a Visa card with no monthly fee but higher foreign transaction fees, or a card with a low monthly fee and lower foreign transaction fees?"
     }
   ]
 }

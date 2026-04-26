@@ -3,5 +3,11 @@
 __pycache__/
 *.pyc
 .vscode/
-.DS_Store__pycache__/
+.DS_Store
+__pycache__/
 evaluation/results/
+personas/.DS_Store
+evaluation/scripts/results/
+orchestrator/reports/
+responses/
+insights/
