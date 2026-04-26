@@ -159,6 +159,10 @@ Rules:
 - Each question should be specific enough to reveal meaningful differences between consumer segments
 - Do NOT use generic questions — make them specific to Switzerland and the topic
 - Return ONLY a valid JSON array, no explanation, no markdown, no extra text
+- Questions must be relevant to ALL Swiss consumer segments — students, families, professionals, retirees and median earners
+- Avoid questions about interest rates, cash advances, or credit features — Swiss consumers pay in full
+- Focus on: monthly fees, cashback on groceries, Twint vs card switching, feature preferences, willingness to pay
+- Questions should reveal differences between segments, not confuse them
 
 JSON format:
 [
@@ -201,8 +205,22 @@ def parse_questions(raw: str, num_questions: int) -> list:
     if start == -1 or end == 0:
         raise ValueError(f"No JSON array found in LLM response:\n{raw}")
 
-    json_str  = raw[start:end]
-    questions = json.loads(json_str)
+    json_str = raw[start:end]
+
+    # Try parsing directly first
+    try:
+        questions = json.loads(json_str)
+    except json.JSONDecodeError:
+        # Model added extra text — find last complete object and close the array
+        last_complete = json_str.rfind("},")
+        if last_complete != -1:
+            json_str = json_str[:last_complete + 1] + "]"
+            try:
+                questions = json.loads(json_str)
+            except json.JSONDecodeError:
+                raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
+        else:
+            raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
 
     # Validate structure
     validated = []

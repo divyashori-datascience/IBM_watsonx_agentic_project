@@ -28,7 +28,7 @@ from question_generator import generate_questions
 
 BASE_DIR       = Path(__file__).parent.parent
 SCRIPTS_DIR    = BASE_DIR / "scripts"
-EVAL_DIR       = BASE_DIR / "evaluation"
+EVAL_DIR        = BASE_DIR / "evaluation" / "scripts"
 INSIGHTS_DIR   = BASE_DIR / "insights"
 RESPONSES_DIR  = BASE_DIR / "responses"
 REPORT_DIR     = BASE_DIR / "orchestrator" / "reports"

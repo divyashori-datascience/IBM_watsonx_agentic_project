@@ -109,51 +109,18 @@ Reasoning rules:
 - NEVER present MAYBE as equivalent to YES in adoption calculations
 - If 3+ segments return NO at a price point — flag this price as not viable for mass market
 
-Produce your response as a valid JSON object following this structure:
+Produce a JSON object with these fields only:
 {
   "insight_id": "insight_<survey_run_id>",
   "generated_at": "<ISO timestamp>",
   "survey_run_id": "<echoed from input>",
   "personas_analysed": <count>,
-  "missing_personas": [],
-  "segment_responses": {
-    "<persona_name>": {
-      "verdict": "YES | NO | MAYBE | CONDITIONAL",
-      "key_barrier": "<main reason for non-adoption or condition for adoption>",
-      "key_quote": "<short quote from their response>",
-      "fee_ceiling": "<CHF X>",
-      "population_weight_pct": <number>
-    }
-  },
-  "pricing_analysis": {
-    "per_segment_threshold": {"<persona>": "<CHF range>"},
-    "sweet_spot_price": "CHF X",
-    "weighted_adoption_at_sweet_spot": "<X% of Swiss adult population>",
-    "pricing_recommendation": "<2-3 sentence recommendation>"
-  },
-  "feature_analysis": {
-    "weighted_feature_ranking": ["1. ...", "2. ...", "3. ..."],
-    "universal_table_stakes": ["...", "..."],
-    "polarising_features": ["..."]
-  },
-  "adoption_forecast": {
-    "highest_value_segment": "<persona and reason>",
-    "gtm_segment_priority": ["1. ...", "2. ...", "3. ..."]
-  },
-  "barrier_map": {
-    "systemic_barriers": {"<barrier_name>": {"affects": [], "fix": "..."}},
-    "segment_specific_barriers": {"<persona>": "..."}
-  },
-  "cross_segment_insight": "<3-5 sentence synthesis of the most important cross-segment pattern>",
-  "visa_recommendation": {
-    "primary_recommendation": "...",
-    "secondary_recommendation": "...",
-    "key_assumption": "...",
-    "confidence_level": "HIGH | MEDIUM | LOW",
-    "suggested_follow_up_questions": ["...", "...", "..."]
-  },
-  "confidence_level": "HIGH | MEDIUM | LOW",
-  "analyst_flags": ["..."]
+  "cross_segment_insight": "<3-5 sentence synthesis of the most important pattern>",
+  "pricing_sweet_spot": "CHF X — one sentence explanation",
+  "top_features": ["feature 1", "feature 2", "feature 3"],
+  "main_barriers": ["barrier 1", "barrier 2"],
+  "visa_recommendation": "<2-3 sentence actionable recommendation for Visa product team>",
+  "confidence_level": "HIGH | MEDIUM | LOW"
 }
 
 Return ONLY the JSON object. No explanation, no markdown, no extra text."""
@@ -194,10 +161,10 @@ def call_watsonx(prompt: str) -> str:
         "project_id": project_id,
         "input":      full_prompt,
         "parameters": {
-            "max_new_tokens":     1024,  # analyst needs more tokens for structured output, however it can be updated to 512 if we want to reduce latency and cost
+            "max_new_tokens":     2048,  # analyst needs more tokens for structured output, however it can be updated to 512 if we want to reduce latency and cost
             "temperature":        0.3,   # lower temperature for analytical output
             "repetition_penalty": 1.1,
-            "stop_sequences":     ["</s>", "[/INST]"],
+            "stop_sequences":     ["</s>", "[/INST]", "<|eom_id|>"],
         },
     }
 
