@@ -1,0 +1,14 @@
+{
+  "survey_config": {
+    "num_questions": 5,
+    "provider": "watsonx",
+    "personas": ["student", "professional", "mittelstand", "family", "retired"],
+    "question_language": "English",
+    "topic": "Visa card adoption and payment behavior in Switzerland"
+  },
+  "question_generator": {
+    "model_id": "meta-llama/llama-3-3-70b-instruct",
+    "max_new_tokens": 300,
+    "temperature": 0.7
+  }
+}
