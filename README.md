@@ -1,113 +1,115 @@
-# RAG Knowledge Base — Swiss Consumer Data
+# Multi-Agent Synthetic Researcher
+**PROJECT WATSONX — Group 29 HSLU**
 
-This folder contains the Retrieval-Augmented Generation (RAG) layer for the Multi-Agent Synthetic Researcher project. Each persona agent retrieves relevant Swiss consumer data before answering survey questions, grounding responses in real demographic and behavioral statistics rather than relying solely on the LLM's training data.
+An AI-powered multi-agent system that simulates Swiss consumer feedback for Visa card product research. Five synthetic personas grounded in real Swiss demographic data answer survey questions, producing structured insights for the Visa product team.
 
 ---
 
-## How It Works
-
-Before each survey question, `retriever.py` queries the knowledge base with the persona type and question text. The 4 most relevant data chunks are injected into the persona's system prompt as context. This means Sandra's answer about grocery spending is backed by actual BFS household budget data, not just a prompt-engineered assumption.
+## System Pipeline
 
 ```
-Question → retrieve_context(persona, question) → top 4 chunks → injected into system prompt → LLM answers
+Orchestrator
+      ↓
+Question Generator → generates questions from a topic
+      ↓
+Persona Agents (5) → same questions, all personas, RAG-grounded
+      ↓
+Evaluation Suite → consistency, confidence, differentiation
+      ↓
+Analyst Agent → reads all persona responses per question → structured insight JSON with Visa recommendations
 ```
+
+---
+
+## Personas
+
+| Persona | Name | Age | Net Income | Fee Ceiling |
+|---------|------|-----|------------|-------------|
+| Student | Campus Felix | 22 | CHF 800–2,000/mo | CHF 5/mo |
+| Professional | Mobile-First Lukas | 32 | CHF 8,500–11,200/mo | CHF 25–30/mo |
+| Mittelstand | Average-Earner Anna | 36 | CHF 5,600/mo | CHF 12/mo |
+| Family | Value-Smart Sandra | 44 | CHF 7,500–9,800/mo (household) | CHF 10/mo |
+| Retired | Trust-First Peter | 65 | CHF 1,682/mo | CHF 5/mo |
+
+---
+
+## Quick Start
+
+**1. Install dependencies:**
+```bash
+pip install requests chromadb
+```
+
+**2. Create `.env` in project root:**
+```
+WATSONX_URL=https://eu-de.ml.cloud.ibm.com
+WATSONX_PROJECT_ID=your_project_id
+WATSONX_API_KEY=your_api_key
+WATSONX_MODEL_ID=meta-llama/llama-3-3-70b-instruct
+```
+
+**3. Run the full pipeline:**
+```bash
+python3 orchestrator/orchestrator.py --provider watsonx --topic "Visa card pricing in Switzerland"
+```
+
+**4. Test without API calls:**
+```bash
+python3 orchestrator/orchestrator.py --provider mock --topic "Mobile payment adoption"
+```
+
+**5. Run survey or evaluation separately:**
+```bash
+python3 scripts/run_survey.py --all --provider watsonx
+python3 evaluation/run_evaluation.py
+```
+
+---
+
+## Configuration
+
+Edit `config.json` to change number of questions, personas, or model settings without touching any code.
 
 ---
 
 ## Data Sources
 
-| # | File | Publisher | Coverage | Year |
-|---|------|-----------|----------|------|
-| 1 | `paytrans_survey_report_2024_en.pdf` | Swiss National Bank (SNB) | Payment behavior of private individuals in Switzerland | 2024 |
-| 2 | `Report_Swiss_Payment_Monitor_2025-1_final_en.pdf` | ZHAW / University of St.Gallen | Payment method market shares, mobile payment, neobanks | Survey Nov 2024, published Feb 2025 |
-| 3 | `population_by_age_region.xlsx` | Swiss Federal Statistical Office (BFS) | Permanent resident population by age and canton | 2024 |
-| 4 | `household_budget_data.xlsx` | Swiss Federal Statistical Office (BFS) | Household income and expenditure by category | 2022–2023 |
+The RAG knowledge base uses 57 chunks from publicly available Swiss data. No sensitive or Visa-internal data is used. 
 
-All sources are publicly available and free to access. No sensitive, client-specific, or Visa-internal data is used.
-
----
-
-## Knowledge Base Contents (50 chunks)
-
-Chunks are organized by source and topic:
-
-| Source | Chunks | Topics covered |
-|--------|--------|---------------|
-| SNB Payment Survey 2024 | 15 | Payment method shares by age/income, cash usage, Twint, acceptance constraints |
-| Swiss Payment Monitor 2025 | 17 | Market shares, mobile payers, provider breakdown, transaction amounts by location |
-| BFS Population Data 2024 | 5 | Population size per persona age group |
-| BFS Household Budget 2022–2023 | 13 | Gross/disposable income, spending by category, savings, pension income |
-
-Each chunk is tagged with:
-- `source` — which report it came from
-- `topic` — semantic category (e.g. `cash_attitude`, `food_spending`)
-- `personas` — which persona(s) it is most relevant to (`student`, `family`, `professional`, `retired`, or `all`)
+| Source | Publisher | Year |
+|--------|-----------|------|
+| Payment Methods Survey | Swiss National Bank (SNB) | 2024 |
+| Swiss Payment Monitor | ZHAW / University of St.Gallen | 2025 |
+| Population by Age | BFS | 2024 |
+| Household Budget Survey | BFS | 2022–2023 |
 
 ---
 
-## Persona–Data Mapping
+## Project Structure
 
-| Persona | Most relevant chunks |
-|---------|---------------------|
-| **Student** (age 18–34, 1.86M people) | Mobile payment dominance, Twint usage, small amounts, neobanks, low cash usage |
-| **Family** (age 35–54, 2.54M people) | Debit card at large retailers, household food/housing/transport spend, CHF 629 groceries |
-| **Professional** (age 25–54, 3.75M people) | Credit card for travel/restaurants, higher income bracket, cashless preference |
-| **Retired** (age 65+, 1.77M people) | Cash dominance in 55+ group, AHV/pension income, opposition to cash abolition |
-
----
-
-## Updating the Knowledge Base
-
-The SNB and BFS publish updated reports annually (typically Q1 of the following year). To keep the knowledge base current:
-
-### When to update
-- **SNB Payment Methods Survey** — published each spring for the previous year
-- **Swiss Payment Monitor** — published twice yearly (spring and autumn)
-- **BFS Population Data** — published each spring for December 31 of the previous year
-- **BFS Household Budget** — published every 1–2 years
-
-### How to update (step by step)
-
-1. Download the new reports from the official sources:
-   - SNB: [www.snb.ch](https://www.snb.ch)
-   - Swiss Payment Monitor: [www.swisspaymentmonitor.ch](https://www.swisspaymentmonitor.ch)
-   - BFS: [www.bfs.admin.ch](https://www.bfs.admin.ch)
-
-2. Open `chunks.py` and update the relevant chunk texts with new figures. Each chunk clearly states its source and year, making it easy to identify what needs updating.
-
-3. For entirely new data topics, add new chunk entries following the existing format:
-   ```python
-   {
-       "id":       "snb_16",           # unique ID
-       "text":     "...",              # the actual data fact, one sentence
-       "source":   "SNB Payment Survey 2025",
-       "topic":    "topic_name",
-       "personas": ["family", "retired"],  # or ["all"]
-   }
-   ```
-
-4. The knowledge base rebuilds itself in memory on the next run — no separate build step needed.
-
-5. Re-run the survey and check that persona answers still make sense. If a persona's behavior has changed significantly (e.g. cash usage dropped further), consider updating the persona prompts too.
+```
+project-watsonx-group29/
+├── config.json
+├── orchestrator/
+│   ├── orchestrator.py
+│   └── question_generator.py
+├── rag/
+│   ├── chunks.py
+│   ├── retriever.py
+│   └── README.md
+├── scripts/
+│   └── run_survey.py
+├── evaluation/
+├── analyst/
+│   ├── __init__.py
+│   └── analyst_agent.py     ← generates insight JSONs from persona responses
+├── personas/
+├── prompts/
+├── survey/
+├── responses/
+└── insights/
+```
 
 ---
 
-## Design Decisions
-
-**Why hardcoded chunks instead of loading PDFs at runtime?**
-Extracting structured facts from PDFs automatically is unreliable — tables, charts, and formatting cause errors. By manually extracting and verifying each chunk, we ensure data quality. This is appropriate for a consulting context where accuracy matters.
-
-**Why in-memory ChromaDB instead of a persistent database?**
-The knowledge base is small (50 chunks) and rebuilds in under a second. An in-memory approach removes file system dependencies and makes the project easier to run on any machine.
-
-**Why TF-IDF embeddings instead of a neural embedding model?**
-Neural embedding models require downloading 80–400MB model files and an internet connection. The TF-IDF approach works fully offline, is deterministic, and is sufficient for a 50-chunk knowledge base where the chunks are already well-labelled by persona and topic.
-
----
-
-## Limitations
-
-- **Data is static** — the knowledge base does not update itself. Annual manual update is required.
-- **Swiss market only** — all data is specific to Switzerland. The system would need new data sources for other markets.
-- **Aggregated data** — all figures are national averages. Regional differences (e.g. Zurich vs. rural cantons) are not captured at chunk level.
-- **Language** — source documents are in English or German. Chunks are written in English to match the persona prompts.
+*Group 29 — HSLU MSc Agentic AI Course*
