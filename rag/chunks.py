@@ -108,6 +108,13 @@ CHUNKS = [
         "source":      "SNB Payment Survey 2024",        "topic":       "online_payment",
         "personas":    ["student", "professional", "family"],
     },
+    {
+    "id":       "snb_16",
+    "text":     "Swiss consumers aged 35-44 show balanced payment behavior: debit card dominant at supermarkets, Twint for P2P transfers, moderate credit card use for larger purchases.",
+    "source":   "SNB Payment Survey 2024",
+    "topic":    "payment_behavior_mittelstand",
+    "personas": ["mittelstand"],
+    },
 
     # ── Swiss Payment Monitor 2025 ────────────────────────────────────────────
 
@@ -213,7 +220,20 @@ CHUNKS = [
         "source":      "Swiss Payment Monitor 2025",        "topic":       "cash_payers",
         "personas":    ["retired"],
     },
-
+    {
+    "id":       "spm_18",
+    "text":     "Debit card payers represent 10.5% of Swiss population — the mittelstand median earner segment predominantly uses debit card for 45% of transactions, particularly at large retailers.",
+    "source":   "Swiss Payment Monitor 2025",
+    "topic":    "debit_card_mittelstand",
+    "personas": ["mittelstand"],
+    },
+    {
+    "id":       "spm_19",
+    "text":     "Revolut is used by 17.1% of Swiss respondents, primarily as a supplement to traditional banking for travel and foreign currency — relevant for median earner segment aged 28-42.",
+    "source":   "Swiss Payment Monitor 2025",
+    "topic":    "neobank_mittelstand",
+    "personas": ["mittelstand"],
+    },
     # ── BFS Population Data 2024 ──────────────────────────────────────────────
 
     {
@@ -339,6 +359,20 @@ CHUNKS = [
     "text":     "Swiss median net household income (single earner): CHF 5,600/month (2024), based on BFS median gross wage of CHF 6,788/month minus taxes and social contributions.",
     "source":   "BFS Household Budget Survey 2022-2023",
     "topic":    "median_income",
+    "personas": ["mittelstand"],
+    },
+    {
+    "id":       "bfs_hh_15",
+    "text":     "Average Swiss single-person household monthly fixed costs: rent CHF 1,400-1,650, health insurance CHF 380-460, transport CHF 200-300, groceries CHF 450-600 — total approximately CHF 2,640-3,330/month.",
+    "source":   "BFS Household Budget Survey 2022-2023",
+    "topic":    "fixed_costs_mittelstand",
+    "personas": ["mittelstand"],
+    },
+    {
+    "id":       "bfs_hh_16",
+    "text":     "Swiss median earner disposable income after fixed costs: CHF 2,070-2,960/month — sufficient for discretionary spending but requires careful budget management.",
+    "source":   "BFS Household Budget Survey 2022-2023",
+    "topic":    "disposable_income_mittelstand",
     "personas": ["mittelstand"],
     },
 ]

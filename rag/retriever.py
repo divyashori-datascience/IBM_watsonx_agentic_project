@@ -70,7 +70,7 @@ def retrieve_context(persona: str, question: str, n_results: int = 4) -> str:
     Returns a formatted string block ready to inject into the system prompt.
 
     Args:
-        persona:   'student', 'professional', 'family', or 'retired'
+        persona:   'student', 'professional', 'mittelstand','family', or 'retired'
         question:  The survey question being asked
         n_results: Number of chunks to return (default 4)
     """
@@ -107,6 +107,7 @@ if __name__ == "__main__":
         ("retired",      "Would you ever switch from cash to a credit card?"),
         ("student",      "You use Twint for everything. What would make you switch to Visa?"),
         ("professional", "Which Visa card features matter most for your travel spending?"),
+        ("mittelstand",  "Would you pay CHF 8/month for a card with 1% cashback on groceries?"),
     ]
     for persona, question in tests:
         print(f"\n=== {persona.upper()} ===")
