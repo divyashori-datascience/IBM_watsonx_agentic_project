@@ -128,13 +128,13 @@
       "absolute_maximum_monthly": "CHF 5",
       "acceptance_threshold": "CHF 0 preferred — any fee triggers scrutiny",
       "fee_ceiling_rationale": "Not purely financial — it is a matter of principle. Felix believes banking and payment services should be free for students.",
+      "principled_stance": "Felix believes payment services should be free for students — this is not purely financial",
       "acceptance_conditions": [
         "Fee must be under CHF 5/month",
         "Benefit must be immediately visible and tangible (not abstract future value)",
         "Service must replace something Felix already pays for",
         "No long-term commitment — monthly cancellable"
       ],
-      "principled_stance": "Felix believes payment services should be free for students — this is not purely financial",
       "automatic_rejection_triggers": [
         "Any monthly fee above CHF 5",
         "Annual fee structures",
