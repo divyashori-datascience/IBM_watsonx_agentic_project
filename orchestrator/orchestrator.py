@@ -21,9 +21,8 @@ import argparse
 import subprocess
 from datetime import datetime
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from orchestrator.question_generator import generate_questions
+sys.path.insert(0, str(Path(__file__).parent))
+from question_generator import generate_questions
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -147,28 +146,17 @@ def run_analyst(response_files: dict, provider: str = "watsonx") -> dict:
     analyst_script = BASE_DIR / "analyst" / "analyst_agent.py"
 
     if analyst_script.exists():
-        # ── Real Analyst Agent ─────────────────────────────────────────────
-        for persona, response_file in response_files.items():
-            print(f"\n  → Analysing: {persona.upper()}")
-            result = subprocess.run(
-                [sys.executable, str(analyst_script),
-                 "--response", str(response_file),
-                 "--provider", provider],
-                capture_output=False,
-                text=True,
-            )
-            if result.returncode == 0:
-                insight_file = INSIGHTS_DIR / f"insight_{persona}.json"
-                if insight_file.exists():
-                    insights[persona] = load_json(insight_file)
-                    print(f"  ✓ Insight generated → insight_{persona}.json")
-            else:
-                print(f"  ✗ Analyst failed for {persona}")
+        # ── Real Analyst Agent — call directly as a module ─────────────────
+        sys.path.insert(0, str(BASE_DIR))
+        from analyst.analyst_agent import run_analyst as _run_analyst
+        insights = _run_analyst(response_files, provider=provider)
+        print(f"  ✓ Analyst complete — {len(insights)} questions analysed")
+    
     else:
         # ── Placeholder (until analyst_agent.py is ready) ──────────────────
-        print("  ⚠ Analyst Agent not found — skipping insight generation")
-        print("  ⚠ Add analyst/analyst_agent.py to enable this step")
-        print("  ⚠ Expected path:", analyst_script)
+        print("  Analyst Agent not found — skipping insight generation")
+        print("  Add analyst/analyst_agent.py to enable this step")
+        print("  Expected path:", analyst_script)
 
     return insights
 
@@ -195,7 +183,7 @@ def generate_report(
             "consistency_score": eval_summary.get("consistency", {}).get(persona),
             "confidence_score":  eval_summary.get("confidence",  {}).get(persona),
             "needs_review":      persona in eval_summary.get("flagged_for_review", []),
-            "insight_generated": persona in insights,
+            "insight_generated": len(insights) > 0,
         }
 
     report = {
