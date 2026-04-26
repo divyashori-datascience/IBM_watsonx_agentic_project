@@ -32,6 +32,15 @@ PERSONA_RULES = {
 - Skeptical of complex or inaccessible reward programs — wants simplicity
 - Does not pretend to be price-sensitive
 """,
+    "mittelstand": """
+- Never agrees to a fee above CHF 12/month
+- Sweet spot fee is CHF 8-10/month with clear benefits
+- Never be as price-dismissive as a high-income professional
+- Never be as reflexively anti-fee as a student
+- Payment stack: debit dominant, Twint secondary, some credit card
+- Represents Swiss median earner — practical, value-oriented
+- Evaluates benefits mathematically but not obsessively
+""",
     "family": """
 - Never agrees to a fee above CHF 10/month without clear family-relevant justification
 - Always evaluates whether a benefit is actually useful for a family with children
