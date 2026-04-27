@@ -97,10 +97,11 @@ The RAG knowledge base uses 57 chunks from publicly available Swiss data. No sen
 ```
 project-watsonx-group29/
 ├── config.json
-├── orchestrator/
+├── .env                 ← credentials, gitignored
+├── orchestrator/        ← agents that coordinate
 │   ├── orchestrator.py
 │   └── question_generator.py
-├── rag/
+├── rag/                 ← knowledge layer, self-contained
 │   ├── chunks.py
 │   ├── retriever.py
 │   └── README.md
@@ -109,11 +110,12 @@ project-watsonx-group29/
 ├── evaluation/
 ├── analyst/
 │   └── analyst_agent.py     ← generates insight JSONs from persona responses
-├── personas/
-├── prompts/
-├── survey/
-├── responses/
-└── insights/
+├── personas/                ← persona specifications
+├── prompts/                 ← LLM prompts
+├── survey/                  ← survey runner
+├── responses/               ← raw persona outputs
+└── insights/                ← analyst outputs
+
 ```
 
 ---

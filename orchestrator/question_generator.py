@@ -87,7 +87,7 @@ def call_watsonx(prompt: str, config: dict) -> str:
         "WATSONX_MODEL_ID",
         config.get("question_generator", {}).get("model_id", "meta-llama/llama-3-3-70b-instruct")
     )
-    max_tokens = config.get("question_generator", {}).get("max_new_tokens", 300)
+    max_tokens = config.get("question_generator", {}).get("max_new_tokens", 500)
     temperature = config.get("question_generator", {}).get("temperature", 0.7)
 
     payload = {
