@@ -10,7 +10,7 @@ from pathlib import Path
 
 def load_env():
     """Load .env from project root."""
-    env_path = Path(__file__).parent.parent / ".env"
+    env_path = Path(__file__).parent.parent.parent / ".env"
     if not env_path.exists():
         return
     with open(env_path) as f:

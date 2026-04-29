@@ -163,6 +163,10 @@ Rules:
 - Avoid questions about interest rates, cash advances, or credit features — Swiss consumers pay in full
 - Focus on: monthly fees, cashback on groceries, Twint vs card switching, feature preferences, willingness to pay
 - Questions should reveal differences between segments, not confuse them
+- Each question must be answerable by ALL 5 personas without confusion
+- Include the corresponding persona's name in parentheses when a question targets a specific segment
+- Always include the CHF amount in fee-related questions
+- Never use vague terms like "additional rewards" — be specific
 
 JSON format:
 [
@@ -211,15 +215,14 @@ def parse_questions(raw: str, num_questions: int) -> list:
     try:
         questions = json.loads(json_str)
     except json.JSONDecodeError:
-        # Model added extra text — find last complete object and close the array
-        last_complete = json_str.rfind("},")
-        if last_complete != -1:
-            json_str = json_str[:last_complete + 1] + "]"
-            try:
-                questions = json.loads(json_str)
-            except json.JSONDecodeError:
-                raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
-        else:
+        # Find the last complete JSON object
+        last = max(json_str.rfind("},"), json_str.rfind("}"))
+        if last == -1:
+            raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
+        json_str = json_str[:last + 1] + "]"
+        try:
+            questions = json.loads(json_str)
+        except json.JSONDecodeError:
             raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
 
     # Validate structure

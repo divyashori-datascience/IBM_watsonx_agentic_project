@@ -40,7 +40,7 @@ def call_llm(prompt: str) -> str:
         "project_id": project_id,
         "input": prompt,
         "parameters": {
-            "max_new_tokens": 10,
+            "max_new_tokens": 50,
             "temperature": 0.2,
         },
     }
@@ -113,11 +113,15 @@ def score_consistency(response_file: Path) -> dict:
         raw = call_llm(prompt)
 
         try:
-            # Parse the score and clamp between 0 and 1
-            score = float(raw.split()[0])
-            score = max(0.0, min(1.0, score))
-            print(f"    → {score}")
-            question_scores.append({"question_id": q_id, "score": score})
+            import re
+            numbers = re.findall(r'\d+\.?\d*', raw)
+            if numbers:
+                score = float(numbers[0])
+                score = max(0.0, min(1.0, score))
+                print(f"    → {score}")
+                question_scores.append({"question_id": q_id, "score": score})
+            else:
+                print(f"    Could not parse: {raw}")
         except:
             print(f"    Could not parse: {raw}")
 

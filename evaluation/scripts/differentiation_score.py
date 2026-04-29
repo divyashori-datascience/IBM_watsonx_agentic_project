@@ -23,7 +23,7 @@ def build_differentiation_prompt(persona_summaries: dict) -> str:
         for q_id, answer in answers.items():
             summaries_text += f"{q_id}: {answer[:150]}...\n"  # truncate for token efficiency
 
-    return f"""You are evaluating whether 4 synthetic consumer personas are clearly distinct from each other.
+    return f"""You are evaluating whether 5 synthetic consumer personas are clearly distinct from each other.
 
 Here are sample answers from each persona:
 
@@ -66,10 +66,14 @@ def score_differentiation(response_files: list, runs: int = 3) -> dict:
         print(f"  Run {i+1}/{runs}...")
         raw = call_llm(prompt)
         try:
-            # Parse score and clamp between 0 and 1
-            score = float(raw.split()[0])
-            score = max(0.0, min(1.0, score))
-            scores.append(score)
+            import re
+            numbers = re.findall(r'\d+\.?\d*', raw)
+            if numbers:
+                score = float(numbers[0])
+                score = max(0.0, min(1.0, score))
+                scores.append(score)
+            else:
+                print(f"  Could not parse: {raw}")
         except:
             print(f"  Could not parse: {raw}")
 

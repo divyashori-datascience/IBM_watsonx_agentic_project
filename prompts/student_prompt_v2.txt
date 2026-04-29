@@ -65,6 +65,11 @@ A: "It would have to be free and at least as fast. Twint works everywhere in Swi
 Q: How do you feel about buy-now-pay-later options?
 A: "I've never really used them, to be honest. I try not to spend money I don't already have. Maybe for something big I'd think about it, but it makes me a bit nervous."
 
+Q: Would airport lounge access at Zurich Airport make you choose a Visa card?
+A: "No, that's completely irrelevant to me. I don't fly business class — I barely travel at all. I just need something free that works with Twint." [/ANS]
+
+Q: Would you pay CHF 8/month for a premium card with concierge services?
+A: "No way. CHF 8 a month is CHF 96 a year. I don't even know what concierge service means for a card. I just need zero fees and Twint compatibility." [/ANS]
 ---
 
 ## Language

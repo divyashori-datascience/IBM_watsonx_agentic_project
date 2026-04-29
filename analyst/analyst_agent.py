@@ -115,7 +115,14 @@ Produce a JSON object with these fields only:
   "generated_at": "<ISO timestamp>",
   "survey_run_id": "<echoed from input>",
   "personas_analysed": <count>,
-  "cross_segment_insight": "<3-5 sentence synthesis of the most important pattern>",
+  "segment_responses": {
+    "<persona_name>": {
+      "verdict": "YES | NO | MAYBE",
+      "key_reasoning": "<one sentence>",
+      "fee_ceiling": "<CHF X>"
+    }
+  },
+  "cross_segment_insight": "<3-5 sentence synthesis>",
   "pricing_sweet_spot": "CHF X — one sentence explanation",
   "top_features": ["feature 1", "feature 2", "feature 3"],
   "main_barriers": ["barrier 1", "barrier 2"],
@@ -124,6 +131,7 @@ Produce a JSON object with these fields only:
 }
 
 Return ONLY the JSON object. No explanation, no markdown, no extra text."""
+
 
 # ── IAM Token ─────────────────────────────────────────────────────────────────
 
@@ -161,7 +169,7 @@ def call_watsonx(prompt: str) -> str:
         "project_id": project_id,
         "input":      full_prompt,
         "parameters": {
-            "max_new_tokens":     2048,  # analyst needs more tokens for structured output, however it can be updated to 512 if we want to reduce latency and cost
+            "max_new_tokens":     3000,  # analyst needs more tokens for structured output, however it can be updated to if we want to reduce latency and cost
             "temperature":        0.3,   # lower temperature for analytical output
             "repetition_penalty": 1.1,
             "stop_sequences":     ["</s>", "[/INST]", "<|eom_id|>"],
@@ -188,29 +196,19 @@ def call_mock(prompt: str) -> str:
         "generated_at":      datetime.now().isoformat(),
         "survey_run_id":     "mock_run",
         "personas_analysed": 5,
-        "missing_personas":  [],
         "segment_responses": {
-            "Felix":   {"verdict": "NO",    "key_barrier": "Fee above CHF 5 ceiling", "key_quote": "[MOCK]", "fee_ceiling": "CHF 5",     "population_weight_pct": 8},
-            "Lukas":   {"verdict": "YES",   "key_barrier": "None — ROI positive",     "key_quote": "[MOCK]", "fee_ceiling": "CHF 25-30", "population_weight_pct": 12},
-            "Anna":    {"verdict": "MAYBE", "key_barrier": "Needs free trial",         "key_quote": "[MOCK]", "fee_ceiling": "CHF 12",    "population_weight_pct": 28},
-            "Sandra":  {"verdict": "MAYBE", "key_barrier": "Joint decision required",  "key_quote": "[MOCK]", "fee_ceiling": "CHF 10",    "population_weight_pct": 22},
-            "Peter":   {"verdict": "NO",    "key_barrier": "Trust + fee barriers",     "key_quote": "[MOCK]", "fee_ceiling": "CHF 5",     "population_weight_pct": 18},
+            "Felix":   {"verdict": "NO",    "key_reasoning": "Fee above CHF 5 ceiling", "fee_ceiling": "CHF 5"},
+            "Lukas":   {"verdict": "YES",   "key_reasoning": "ROI positive at his spending level", "fee_ceiling": "CHF 25-30"},
+            "Anna":    {"verdict": "MAYBE", "key_reasoning": "Needs free trial to verify value", "fee_ceiling": "CHF 12"},
+            "Sandra":  {"verdict": "MAYBE", "key_reasoning": "Joint decision required with partner", "fee_ceiling": "CHF 10"},
+            "Peter":   {"verdict": "NO",    "key_reasoning": "Fee above ceiling, trust barrier", "fee_ceiling": "CHF 5"},
         },
-        "pricing_analysis": {
-            "sweet_spot_price":              "CHF 8",
-            "weighted_adoption_at_sweet_spot": "~48% of Swiss adults",
-            "pricing_recommendation":        "[MOCK] Price at CHF 8 for broad adoption.",
-        },
-        "cross_segment_insight": "[MOCK] This is a placeholder insight.",
-        "visa_recommendation": {
-            "primary_recommendation":   "[MOCK] Launch at CHF 8 with free trial.",
-            "secondary_recommendation": "[MOCK] Premium tier for Lukas.",
-            "key_assumption":           "[MOCK] Anna converts on trial.",
-            "confidence_level":         "MEDIUM",
-            "suggested_follow_up_questions": ["[MOCK] Follow-up question 1?"],
-        },
+        "cross_segment_insight": "[MOCK] Sandra and Anna both prioritize grocery cashback. Felix and Peter reject fees above CHF 5.",
+        "pricing_sweet_spot": "CHF 8 — balances mass market adoption with revenue generation",
+        "top_features": ["grocery cashback", "purchase protection", "simple fee structure"],
+        "main_barriers": ["fee anxiety", "joint decision required for family segment"],
+        "visa_recommendation": "[MOCK] Launch at CHF 8 with 30-day free trial targeting Mittelstand and Family segments.",
         "confidence_level": "MEDIUM",
-        "analyst_flags":    ["[MOCK] This is a mock run — no real analysis performed."],
     })
 
 # ── Format input bundle (from analyst JSON — input_schema) ────────────────────
@@ -243,7 +241,7 @@ def format_input_bundle(survey_run_id: str, question: dict, responses: dict) -> 
             "segment_type":          meta["segment_type"],
             "population_weight_pct": meta["population_weight_pct"],
             "fee_ceiling":           meta["fee_ceiling"],
-            "verbatim_response":     answer,
+            "verbatim_response":     answer[:400],
         })
 
     bundle = {

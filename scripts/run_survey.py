@@ -54,7 +54,7 @@ RESPONSES_DIR.mkdir(exist_ok=True)
 PERSONA_PROMPT_MAP = {
     "student":      "student_prompt_v2.txt",      # Felix
     "professional": "professional_prompt_v2.txt",  # Lukas
-    "mittelstand":  "mittelstand_prompt_v2.txt",      # Anna 
+    "mittelstand":  "mittelstand_prompt_v2.txt",    # Anna 
     "family":       "family_prompt_v2.txt",        # Sandra
     "retired":      "retired_prompt_v2.txt",       # Peter
 }
@@ -114,7 +114,7 @@ def call_watsonx(system_prompt: str, messages: list) -> str:
                 "Content-Type":  "application/json",
             },
             json=payload,
-            timeout=60,
+            timeout=120,
         )
         if resp.status_code == 429:
             wait = 3 * (attempt + 1)
