@@ -20,6 +20,7 @@ import sys
 import json
 import argparse
 import requests
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -59,22 +60,28 @@ def load_config() -> dict:
 # ── IAM Token ─────────────────────────────────────────────────────────────────
 
 _iam_token_cache = None
+_iam_token_expiry = 0  # ← expire time in epoch seconds
 
 def get_iam_token() -> str:
-    global _iam_token_cache
-    if _iam_token_cache:
-        return _iam_token_cache
-    resp = requests.post(
-        "https://iam.cloud.ibm.com/identity/token",
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        data={
-            "grant_type": "urn:ibm:params:oauth:grant-type:apikey",
-            "apikey": os.environ["WATSONX_API_KEY"],
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    _iam_token_cache = resp.json()["access_token"]
+    global _iam_token_cache, _iam_token_expiry
+
+    # Token yoksa veya süresi dolduysa yeni al
+    if not _iam_token_cache or time.time() >= _iam_token_expiry:
+        resp = requests.post(
+            "https://iam.cloud.ibm.com/identity/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "grant_type": "urn:ibm:params:oauth:grant-type:apikey",
+                "apikey": os.environ["WATSONX_API_KEY"],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        _iam_token_cache  = data["access_token"]
+        _iam_token_expiry = time.time() + data.get("expires_in", 3600) - 60
+        # safety margin renovate before actual expiry
+
     return _iam_token_cache
 
 # ── LLM Call ──────────────────────────────────────────────────────────────────
@@ -87,7 +94,7 @@ def call_watsonx(prompt: str, config: dict) -> str:
         "WATSONX_MODEL_ID",
         config.get("question_generator", {}).get("model_id", "meta-llama/llama-3-3-70b-instruct")
     )
-    max_tokens = config.get("question_generator", {}).get("max_new_tokens", 500)
+    max_tokens  = config.get("question_generator", {}).get("max_new_tokens", 500)
     temperature = config.get("question_generator", {}).get("temperature", 0.7)
 
     payload = {
@@ -102,17 +109,26 @@ def call_watsonx(prompt: str, config: dict) -> str:
         },
     }
 
-    resp = requests.post(
-        f"{url}/ml/v1/text/generation?version=2023-05-29",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type":  "application/json",
-        },
-        json=payload,
-        timeout=60,
-    )
+    for attempt in range(5):
+        resp = requests.post(
+            f"{url}/ml/v1/text/generation?version=2023-05-29",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type":  "application/json",
+            },
+            json=payload,
+            timeout=60,
+        )
+        if resp.status_code == 429:
+            wait = 3 * (attempt + 1)
+            print(f"  Rate limit, {wait}s bekleniyor...")
+            time.sleep(wait)
+            continue
+        print("STATUS:", resp.status_code)
+        resp.raise_for_status()
+        return resp.json()["results"][0]["generated_text"].strip()
+
     resp.raise_for_status()
-    return resp.json()["results"][0]["generated_text"].strip()
 
 
 def call_mock(prompt: str, config: dict) -> str:
@@ -199,10 +215,7 @@ def parse_questions(raw: str, num_questions: int) -> list:
     Parses the LLM response into a list of question dicts.
     Handles cases where the LLM adds extra text around the JSON.
     """
-    # Try to extract JSON array from response
-    raw = raw.strip()
-
-    # Find the first [ and last ] to extract just the JSON
+    raw   = raw.strip()
     start = raw.find("[")
     end   = raw.rfind("]") + 1
 
@@ -211,11 +224,9 @@ def parse_questions(raw: str, num_questions: int) -> list:
 
     json_str = raw[start:end]
 
-    # Try parsing directly first
     try:
         questions = json.loads(json_str)
     except json.JSONDecodeError:
-        # Find the last complete JSON object
         last = max(json_str.rfind("},"), json_str.rfind("}"))
         if last == -1:
             raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
@@ -225,7 +236,6 @@ def parse_questions(raw: str, num_questions: int) -> list:
         except json.JSONDecodeError:
             raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
 
-    # Validate structure
     validated = []
     for i, q in enumerate(questions, 1):
         if not isinstance(q, dict):
@@ -239,7 +249,7 @@ def parse_questions(raw: str, num_questions: int) -> list:
     if not validated:
         raise ValueError("No valid questions parsed from LLM response")
 
-    return validated[:num_questions]  # cap at requested number
+    return validated[:num_questions]
 
 # ── Main Generator ────────────────────────────────────────────────────────────
 
@@ -249,19 +259,6 @@ def generate_questions(
     provider:      str  = "watsonx",
     save:          bool = True,
 ) -> list:
-    """
-    Generates survey questions for a given topic using the LLM.
-    Returns a list of question dicts in the same format as survey_questions.json.
-
-    Args:
-        topic:         The survey topic (e.g. "Visa card adoption in Switzerland")
-        num_questions: How many questions to generate (reads from config if None)
-        provider:      'watsonx' or 'mock'
-        save:          Whether to save the generated questions to survey/survey_questions.json
-
-    Returns:
-        List of question dicts: [{"id": "Q1", "category": "...", "text": "..."}, ...]
-    """
     config = load_config()
 
     if num_questions is None:
@@ -271,7 +268,6 @@ def generate_questions(
     print(f"  Questions    : {num_questions}")
     print(f"  Provider     : {provider}")
 
-    # Build prompt and call LLM
     prompt = build_generation_prompt(topic, num_questions)
 
     print(f"  Generating...")
@@ -280,16 +276,13 @@ def generate_questions(
     else:
         raw = call_watsonx(prompt, config)
 
-    # Parse response
     questions = parse_questions(raw, num_questions)
     print(f"  ✓ Generated {len(questions)} questions")
 
-    # Print generated questions
     for q in questions:
         print(f"\n  [{q['id']}] {q['category']}")
         print(f"  Q: {q['text']}")
 
-    # Save to survey_questions.json (replaces existing)
     if save:
         survey_data = {
             "survey_title":    f"Survey — {topic}",
@@ -310,29 +303,10 @@ def generate_questions(
 
 def main():
     parser = argparse.ArgumentParser(description="Question Generator Agent")
-    parser.add_argument(
-        "--topic",
-        type=str,
-        required=True,
-        help="Survey topic (e.g. 'Visa card pricing sensitivity in Switzerland')"
-    )
-    parser.add_argument(
-        "--num",
-        type=int,
-        default=None,
-        help="Number of questions to generate (default: from config.json)"
-    )
-    parser.add_argument(
-        "--provider",
-        choices=["watsonx", "mock"],
-        default="watsonx",
-        help="LLM provider (default: watsonx)"
-    )
-    parser.add_argument(
-        "--no-save",
-        action="store_true",
-        help="Don't save to survey_questions.json"
-    )
+    parser.add_argument("--topic",    type=str, required=True)
+    parser.add_argument("--num",      type=int, default=None)
+    parser.add_argument("--provider", choices=["watsonx", "mock"], default="watsonx")
+    parser.add_argument("--no-save",  action="store_true")
     args = parser.parse_args()
 
     questions = generate_questions(

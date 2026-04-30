@@ -183,8 +183,9 @@ PROVIDERS = {
 def build_session_context(history: list) -> str:
     if not history:
         return ""
+    recent = history[-3:] # only include last 3 Q&A pairs to keep prompt size manageable
     lines = []
-    for i, turn in enumerate(history, 1):
+    for i, turn in enumerate(recent, 1):
         lines.append(f"Q{i}: {turn['question']}")
         lines.append(f"A{i}: {turn['answer']}")
         lines.append("")

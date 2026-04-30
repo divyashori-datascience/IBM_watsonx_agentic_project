@@ -28,7 +28,7 @@ from question_generator import generate_questions
 
 BASE_DIR       = Path(__file__).parent.parent
 SCRIPTS_DIR    = BASE_DIR / "scripts"
-EVAL_DIR        = BASE_DIR / "evaluation" / "scripts"
+EVAL_DIR       = BASE_DIR / "evaluation" / "scripts"
 INSIGHTS_DIR   = BASE_DIR / "insights"
 RESPONSES_DIR  = BASE_DIR / "responses"
 REPORT_DIR     = BASE_DIR / "orchestrator" / "reports"
@@ -80,14 +80,13 @@ def run_surveys(personas: list, provider: str) -> dict:
             [sys.executable, str(SCRIPTS_DIR / "run_survey.py"),
              "--persona", persona,
              "--provider", provider],
-            capture_output=False,  # show live output
+            capture_output=False,
             text=True,
         )
         if result.returncode != 0:
             print(f"  ✗ Error running {persona}")
             continue
 
-        # Find the response file that was just created
         response_file = get_latest_response(persona)
         if response_file:
             response_files[persona] = response_file
@@ -116,7 +115,6 @@ def run_evaluation() -> dict:
         print("  ✗ Evaluation failed")
         return {}
 
-    # Find the most recent evaluation summary
     results_dir = BASE_DIR / "evaluation" / "results"
     summaries   = sorted(results_dir.glob("evaluation_summary_*.json"), reverse=True)
 
@@ -188,35 +186,42 @@ def generate_report(
     insights:       dict,
     insight_report: dict,
 ) -> Path:
-
     """
     Combines all outputs into a single consolidated report JSON.
     """
     section("STEP 4 — GENERATING CONSOLIDATED REPORT")
+
+    # Collect flagged personas from all categories
+    flagged = eval_summary.get("flagged_for_review", {})
+    all_flagged = set(
+        flagged.get("low_confidence", []) +
+        flagged.get("low_consistency", []) +
+        flagged.get("low_differentiation", [])
+    )
 
     # Collect per-persona summary
     persona_summaries = {}
     for persona in personas:
         response_file = response_files.get(persona)
         persona_summaries[persona] = {
-            "response_file":    str(response_file.name) if response_file else None,
+            "response_file":     str(response_file.name) if response_file else None,
             "consistency_score": eval_summary.get("consistency", {}).get(persona),
             "confidence_score":  eval_summary.get("confidence",  {}).get(persona),
-            "needs_review":      persona in eval_summary.get("flagged_for_review", []),
+            "needs_review":      persona in all_flagged,  # ← düzeltildi
             "insight_generated": len(insights) > 0,
         }
 
     report = {
-        "timestamp":              TIMESTAMP,
-        "provider":               provider,
-        "personas_run":           personas,
-        "differentiation_score":  eval_summary.get("differentiation"),
-        "flagged_for_review":     eval_summary.get("flagged_for_review", []),
-        "persona_summaries":      persona_summaries,
+        "timestamp":             TIMESTAMP,
+        "provider":              provider,
+        "personas_run":          personas,
+        "differentiation_score": eval_summary.get("differentiation"),
+        "flagged_for_review":    eval_summary.get("flagged_for_review", {}),
+        "persona_summaries":     persona_summaries,
         "pipeline_steps": {
-            "surveys_completed":   list(response_files.keys()),
+            "surveys_completed":  list(response_files.keys()),
             "evaluation_complete": bool(eval_summary),
-            "insights_generated":  list(insights.keys()),
+            "insights_generated": list(insights.keys()),
         },
     }
 
@@ -229,7 +234,7 @@ def generate_report(
     print(f"  {'─' * 50}")
     print(f"  Personas run       : {', '.join(personas)}")
     print(f"  Differentiation    : {eval_summary.get('differentiation', 'N/A')}")
-    print(f"  Flagged for review : {eval_summary.get('flagged_for_review', []) or 'none'}")
+    print(f"  Flagged for review : {list(all_flagged) or 'none'}")
     for persona, s in persona_summaries.items():
         consistency = s['consistency_score']
         confidence  = s['confidence_score']
@@ -276,9 +281,9 @@ def main():
     section("STEP 0 — GENERATING SURVEY QUESTIONS")
     print(f"\n  Topic: {args.topic}")
     questions = generate_questions(
-        topic         = args.topic,
-        provider      = args.provider,
-        save          = True,   # saves to survey/survey_questions.json
+        topic    = args.topic,
+        provider = args.provider,
+        save     = True,
     )
     print(f"  ✓ {len(questions)} questions ready for all personas")
 
@@ -297,7 +302,7 @@ def main():
         response_files = response_files,
         eval_summary   = eval_summary,
         insights       = insights,
-        insight_report = insight_report
+        insight_report = insight_report,
     )
 
     print(f"\n✓ Pipeline complete → {report_path.relative_to(BASE_DIR)}")

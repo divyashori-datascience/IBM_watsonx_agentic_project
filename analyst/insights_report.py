@@ -16,6 +16,7 @@ import sys
 import json
 import argparse
 import requests
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -101,23 +102,25 @@ Return ONLY a valid JSON object with this exact structure — no markdown, no ex
 
 # ── IAM Token ─────────────────────────────────────────────────────────────────
 
-_iam_token_cache = None
+_iam_token_cache  = None
+_iam_token_expiry = 0
 
 def get_iam_token() -> str:
-    global _iam_token_cache
-    if _iam_token_cache:
-        return _iam_token_cache
-    resp = requests.post(
-        "https://iam.cloud.ibm.com/identity/token",
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        data={
-            "grant_type": "urn:ibm:params:oauth:grant-type:apikey",
-            "apikey": os.environ["WATSONX_API_KEY"],
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    _iam_token_cache = resp.json()["access_token"]
+    global _iam_token_cache, _iam_token_expiry
+    if not _iam_token_cache or time.time() >= _iam_token_expiry:
+        resp = requests.post(
+            "https://iam.cloud.ibm.com/identity/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "grant_type": "urn:ibm:params:oauth:grant-type:apikey",
+                "apikey": os.environ["WATSONX_API_KEY"],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        _iam_token_cache  = data["access_token"]
+        _iam_token_expiry = time.time() + data.get("expires_in", 3600) - 60
     return _iam_token_cache
 
 # ── LLM Calls ─────────────────────────────────────────────────────────────────
@@ -142,17 +145,26 @@ def call_watsonx(prompt: str) -> str:
         },
     }
 
-    resp = requests.post(
-        f"{url}/ml/v1/text/generation?version=2023-05-29",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type":  "application/json",
-        },
-        json=payload,
-        timeout=120,
-    )
+    for attempt in range(5):
+        resp = requests.post(
+            f"{url}/ml/v1/text/generation?version=2023-05-29",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type":  "application/json",
+            },
+            json=payload,
+            timeout=120,
+        )
+        if resp.status_code == 429:
+            wait = 3 * (attempt + 1)
+            print(f"  Rate limit, {wait}s bekleniyor...")
+            time.sleep(wait)
+            continue
+        print("STATUS:", resp.status_code)
+        resp.raise_for_status()
+        return resp.json()["results"][0]["generated_text"].strip()
+
     resp.raise_for_status()
-    return resp.json()["results"][0]["generated_text"].strip()
 
 
 MOCK_TEMPLATES = {
@@ -415,13 +427,12 @@ def enrich_insights(insights_path: Path, provider: str = "watsonx") -> dict:
     for persona_name, meta in PERSONA_METADATA.items():
         print(f"\n  → Enriching {persona_name} ({meta['segment']})...")
 
-        # Load latest response file for this persona
-        persona_key   = meta["key"]
-        files         = sorted(responses_dir.glob(f"{persona_key}_*.json"), reverse=True)
+        persona_key       = meta["key"]
+        files             = sorted(responses_dir.glob(f"{persona_key}_*.json"), reverse=True)
         persona_responses = []
         if files:
             with open(files[0], encoding="utf-8") as f:
-                resp_data = json.load(f)
+                resp_data         = json.load(f)
                 persona_responses = resp_data.get("results", [])
 
         try:
@@ -431,9 +442,9 @@ def enrich_insights(insights_path: Path, provider: str = "watsonx") -> dict:
                 prompt = build_prompt(persona_name, persona_responses, raw_insights)
                 raw    = call_watsonx(prompt)
 
-            raw   = raw.strip()
-            start = raw.find("{")
-            end   = raw.rfind("}") + 1
+            raw    = raw.strip()
+            start  = raw.find("{")
+            end    = raw.rfind("}") + 1
             parsed = json.loads(raw[start:end])
 
             enriched["personas"][persona_name] = parsed

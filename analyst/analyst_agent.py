@@ -21,6 +21,7 @@ import sys
 import json
 import argparse
 import requests
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -136,23 +137,25 @@ IMPORTANT: You MUST always return a complete valid JSON object. Never return an 
 
 # ── IAM Token ─────────────────────────────────────────────────────────────────
 
-_iam_token_cache = None
+_iam_token_cache  = None
+_iam_token_expiry = 0
 
 def get_iam_token() -> str:
-    global _iam_token_cache
-    if _iam_token_cache:
-        return _iam_token_cache
-    resp = requests.post(
-        "https://iam.cloud.ibm.com/identity/token",
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        data={
-            "grant_type": "urn:ibm:params:oauth:grant-type:apikey",
-            "apikey": os.environ["WATSONX_API_KEY"],
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    _iam_token_cache = resp.json()["access_token"]
+    global _iam_token_cache, _iam_token_expiry
+    if not _iam_token_cache or time.time() >= _iam_token_expiry:
+        resp = requests.post(
+            "https://iam.cloud.ibm.com/identity/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "grant_type": "urn:ibm:params:oauth:grant-type:apikey",
+                "apikey": os.environ["WATSONX_API_KEY"],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        _iam_token_cache  = data["access_token"]
+        _iam_token_expiry = time.time() + data.get("expires_in", 3600) - 60
     return _iam_token_cache
 
 # ── LLM Call ──────────────────────────────────────────────────────────────────
@@ -170,25 +173,33 @@ def call_watsonx(prompt: str) -> str:
         "project_id": project_id,
         "input":      full_prompt,
         "parameters": {
-            "max_new_tokens":     3000,  # analyst needs more tokens for structured output, however it can be updated to if we want to reduce latency and cost
-            "temperature":        0.3,   # lower temperature for analytical output
+            "max_new_tokens":     3000,
+            "temperature":        0.3,
             "repetition_penalty": 1.1,
             "stop_sequences":     ["</s>", "[/INST]", "<|eom_id|>"],
-        
         },
     }
 
-    resp = requests.post(
-        f"{url}/ml/v1/text/generation?version=2023-05-29",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type":  "application/json",
-        },
-        json=payload,
-        timeout=120,  # analyst needs more time than persona agents
-    )
+    for attempt in range(5):
+        resp = requests.post(
+            f"{url}/ml/v1/text/generation?version=2023-05-29",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type":  "application/json",
+            },
+            json=payload,
+            timeout=120,
+        )
+        if resp.status_code == 429:
+            wait = 3 * (attempt + 1)
+            print(f"  Rate limit, {wait}s bekleniyor...")
+            time.sleep(wait)
+            continue
+        print("STATUS:", resp.status_code)
+        resp.raise_for_status()
+        return resp.json()["results"][0]["generated_text"].strip()
+
     resp.raise_for_status()
-    return resp.json()["results"][0]["generated_text"].strip()
 
 
 def call_mock(prompt: str) -> str:
@@ -216,18 +227,6 @@ def call_mock(prompt: str) -> str:
 # ── Format input bundle (from analyst JSON — input_schema) ────────────────────
 
 def format_input_bundle(survey_run_id: str, question: dict, responses: dict) -> str:
-    """
-    Formats persona responses into the input_schema bundle
-    defined in agent_analyst_v1.json.
-
-    Args:
-        survey_run_id: unique run identifier
-        question:      dict with 'question_id', 'category', 'text'
-        responses:     dict of persona_key → answer string
-
-    Returns:
-        Formatted prompt string for the analyst LLM
-    """
     response_objects = []
     missing_personas = []
 
@@ -247,12 +246,12 @@ def format_input_bundle(survey_run_id: str, question: dict, responses: dict) -> 
         })
 
     bundle = {
-        "survey_run_id":   survey_run_id,
-        "run_mode":        "synthetic",
-        "question_id":     question.get("question_id", question.get("id", "Q?")),
-        "question_text":   question.get("text", ""),
-        "question_type":   question.get("category", "general"),
-        "responses":       response_objects,
+        "survey_run_id":    survey_run_id,
+        "run_mode":         "synthetic",
+        "question_id":      question.get("question_id", question.get("id", "Q?")),
+        "question_text":    question.get("text", ""),
+        "question_type":    question.get("category", "general"),
+        "responses":        response_objects,
         "missing_personas": missing_personas,
     }
 
@@ -280,18 +279,6 @@ def analyse_question(
     responses:     dict,
     provider:      str = "watsonx",
 ) -> dict:
-    """
-    Analyses a single question across all persona responses.
-
-    Args:
-        survey_run_id: unique identifier for this survey run
-        question:      dict with question_id, category, text
-        responses:     dict of persona_key → answer string
-        provider:      'watsonx' or 'mock'
-
-    Returns:
-        Structured insight dict following output_schema
-    """
     prompt = format_input_bundle(survey_run_id, question, responses)
 
     if provider == "mock":
@@ -304,17 +291,6 @@ def analyse_question(
 # ── Run analyst on response files ─────────────────────────────────────────────
 
 def run_analyst(response_files: dict, provider: str = "watsonx") -> dict:
-    """
-    Runs the analyst agent on a set of persona response files.
-    Called by the Orchestrator.
-
-    Args:
-        response_files: dict of persona_key → Path to response JSON file
-        provider:       'watsonx' or 'mock'
-
-    Returns:
-        dict of question_id → insight dict
-    """
     if not response_files:
         print("  ✗ No response files provided to analyst")
         return {}
@@ -326,10 +302,10 @@ def run_analyst(response_files: dict, provider: str = "watsonx") -> dict:
             persona_data[persona_key] = json.load(f)
 
     # Get questions from first persona's response
-    first_persona   = next(iter(persona_data.values()))
-    questions       = first_persona.get("results", [])
-    survey_run_id   = f"visa_survey_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    all_insights    = {}
+    first_persona = next(iter(persona_data.values()))
+    questions     = first_persona.get("results", [])
+    survey_run_id = f"visa_survey_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    all_insights  = {}
 
     print(f"\n  Analyst Agent — analysing {len(questions)} questions across {len(persona_data)} personas")
 
@@ -359,11 +335,11 @@ def run_analyst(response_files: dict, provider: str = "watsonx") -> dict:
 
     # Save consolidated insight file
     output = {
-        "survey_run_id": survey_run_id,
-        "generated_at":  datetime.now().isoformat(),
-        "provider":      provider,
+        "survey_run_id":   survey_run_id,
+        "generated_at":    datetime.now().isoformat(),
+        "provider":        provider,
         "total_questions": len(questions),
-        "insights":      all_insights,
+        "insights":        all_insights,
     }
 
     out_path = INSIGHTS_DIR / f"insights_{survey_run_id}.json"
@@ -391,7 +367,6 @@ def main():
         parser.error("Specify --all or --response <file>")
 
     if args.all:
-        # Collect latest response file for each persona
         response_files = {}
         for persona in PERSONA_METADATA.keys():
             file = get_latest_response(persona)
@@ -413,7 +388,6 @@ def main():
             print(f"✗ File not found: {file}")
             sys.exit(1)
 
-        # Determine persona from filename
         persona = file.stem.split("_")[0]
         run_analyst({persona: file}, args.provider)
 
