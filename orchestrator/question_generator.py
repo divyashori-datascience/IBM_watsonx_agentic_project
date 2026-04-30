@@ -164,8 +164,8 @@ Rules:
 - Focus on: monthly fees, cashback on groceries, Twint vs card switching, feature preferences, willingness to pay
 - Questions should reveal differences between segments, not confuse them
 - Each question must be answerable by ALL 5 personas without confusion
-- Include the corresponding persona's name in parentheses when a question targets a specific segment
-- Always include the CHF amount in fee-related questions
+- Never include persona names or character names in parentheses in any question
+- All questions must be written in second person (you/your) and applicable to any Swiss consumer
 - Never use vague terms like "additional rewards" — be specific
 
 JSON format:
@@ -299,7 +299,7 @@ def generate_questions(
             "total_questions": len(questions),
             "questions":       questions,
         }
-        out_path = SURVEY_DIR / "survey_questions.json"
+        out_path = SURVEY_DIR / f"survey_questions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(survey_data, f, indent=2, ensure_ascii=False)
         print(f"\n  ✓ Saved → survey/survey_questions.json")

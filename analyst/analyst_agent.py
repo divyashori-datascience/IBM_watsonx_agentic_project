@@ -130,7 +130,8 @@ Produce a JSON object with these fields only:
   "confidence_level": "HIGH | MEDIUM | LOW"
 }
 
-Return ONLY the JSON object. No explanation, no markdown, no extra text."""
+Return ONLY the JSON object. No explanation, no markdown, no extra text.
+IMPORTANT: You MUST always return a complete valid JSON object. Never return an empty response."""
 
 
 # ── IAM Token ─────────────────────────────────────────────────────────────────
@@ -173,6 +174,7 @@ def call_watsonx(prompt: str) -> str:
             "temperature":        0.3,   # lower temperature for analytical output
             "repetition_penalty": 1.1,
             "stop_sequences":     ["</s>", "[/INST]", "<|eom_id|>"],
+        
         },
     }
 

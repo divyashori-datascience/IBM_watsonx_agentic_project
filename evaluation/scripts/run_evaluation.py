@@ -21,7 +21,7 @@ from differentiation_score import score_differentiation
 
 BASE_DIR      = Path(__file__).parent.parent.parent
 RESPONSES_DIR = BASE_DIR / "responses"
-RESULTS_DIR   = Path(__file__).parent / "results"
+RESULTS_DIR = Path(__file__).parent.parent / "results"
 RESULTS_DIR.mkdir(exist_ok=True)
 
 TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")

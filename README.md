@@ -17,6 +17,8 @@ Persona Agents (5) → same questions, all personas, RAG-grounded
 Evaluation Suite → consistency, confidence, differentiation
       ↓
 Analyst Agent → reads all persona responses per question → structured insight JSON with Visa recommendations
+      ↓
+Insight Report → category-level enriched insights per persona (price sensitivity, feature preference, switching behavior, trade-offs, willingness to pay)
 ```
 
 ---
@@ -66,7 +68,7 @@ python3 orchestrator/orchestrator.py --provider watsonx --topic "Visa card prici
 **6. Run survey or evaluation separately:**
 ```bash
 python3 scripts/run_survey.py --all --provider watsonx
-python3 evaluation/run_evaluation.py
+python3 evaluation/scripts/run_evaluation.py
 ```
 
 **Expected runtime:** ~5-8 minutes for 2 personas, ~15-25 minutes for all 5 personas. WatsonX API response time is the bottleneck, not local hardware.
@@ -81,7 +83,7 @@ Edit `config.json` to change number of questions, personas, or model settings wi
 
 ## Data Sources
 
-The RAG knowledge base uses 57 chunks from publicly available Swiss data. No sensitive or Visa-internal data is used. 
+The RAG knowledge base uses 57 chunks from publicly available Swiss data. No sensitive or Visa-internal data is used.
 
 | Source | Publisher | Year |
 |--------|-----------|------|
@@ -97,25 +99,34 @@ The RAG knowledge base uses 57 chunks from publicly available Swiss data. No sen
 ```
 project-watsonx-group29/
 ├── config.json
-├── .env                 ← credentials, gitignored
-├── orchestrator/        ← agents that coordinate
+├── .env                      ← credentials, gitignored
+├── orchestrator/             ← agents that coordinate
 │   ├── orchestrator.py
 │   └── question_generator.py
-├── rag/                 ← knowledge layer, self-contained
+├── rag/                      ← knowledge layer, self-contained
 │   ├── chunks.py
 │   ├── retriever.py
 │   └── README.md
 ├── scripts/
 │   └── run_survey.py
 ├── evaluation/
+│   ├── results/              ← evaluation outputs
+│   └── scripts/
+│       ├── run_evaluation.py
+│       ├── consistency_score.py
+│       ├── confidence_score.py
+│       ├── differentiation_score.py
+│       └── evaluation_utils.py
 ├── analyst/
-│   └── analyst_agent.py     ← generates insight JSONs from persona responses
-├── personas/                ← persona specifications
-├── prompts/                 ← LLM prompts
-├── survey/                  ← survey runner
-├── responses/               ← raw persona outputs
-└── insights/                ← analyst outputs
-
+│   ├── analyst_agent.py      ← generates insight JSONs from persona responses
+│   └── insights_report.py    ← category-level enriched report per persona
+├── personas/                 ← persona specifications
+├── prompts/                  ← LLM prompts
+├── survey/                   ← generated survey questions
+├── responses/                ← raw persona outputs
+└── insights/                 ← analyst outputs
+    ├── insights_visa_survey_{timestamp}.json   ← analyst agent output
+    └── insight_report_{timestamp}.json         ← insight report output
 ```
 
 ---

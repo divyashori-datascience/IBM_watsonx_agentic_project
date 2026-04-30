@@ -117,7 +117,7 @@ def run_evaluation() -> dict:
         return {}
 
     # Find the most recent evaluation summary
-    results_dir = EVAL_DIR / "results"
+    results_dir = BASE_DIR / "evaluation" / "results"
     summaries   = sorted(results_dir.glob("evaluation_summary_*.json"), reverse=True)
 
     if summaries:
@@ -127,38 +127,56 @@ def run_evaluation() -> dict:
 
     return {}
 
-# ── Step 3: Run Analyst Agent ─────────────────────────────────────────────────
+# ── Step 3a: Run Analyst Agent ────────────────────────────────────────────────
 
 def run_analyst(response_files: dict, provider: str = "watsonx") -> dict:
-    """
-    Calls the Analyst Agent to generate insight JSONs for each persona.
-    Returns a dict of persona → insight data.
+    section("STEP 3a — RUNNING ANALYST AGENT")
 
-    NOTE: Placeholder until teammate's Analyst Agent is ready.
-    Replace the placeholder block below with:
-        result = subprocess.run([sys.executable, str(BASE_DIR / "analyst" / "analyst_agent.py"), ...])
-    """
-    section("STEP 3 — RUNNING ANALYST AGENT")
-
-    insights = {}
-
-    # ── Check if Analyst Agent exists ─────────────────────────────────────────
+    insights       = {}
     analyst_script = BASE_DIR / "analyst" / "analyst_agent.py"
 
     if analyst_script.exists():
-        # ── Real Analyst Agent — call directly as a module ─────────────────
         sys.path.insert(0, str(BASE_DIR))
         from analyst.analyst_agent import run_analyst as _run_analyst
         insights = _run_analyst(response_files, provider=provider)
         print(f"  ✓ Analyst complete — {len(insights)} questions analysed")
-    
     else:
-        # ── Placeholder (until analyst_agent.py is ready) ──────────────────
         print("  Analyst Agent not found — skipping insight generation")
-        print("  Add analyst/analyst_agent.py to enable this step")
         print("  Expected path:", analyst_script)
 
     return insights
+
+# ── Step 3b: Run Insight Report ───────────────────────────────────────────────
+
+def run_insight_report(provider: str) -> dict:
+    section("STEP 3b — GENERATING INSIGHT REPORT PER CATEGORY")
+
+    insight_script = BASE_DIR / "analyst" / "insights_report.py"
+
+    if not insight_script.exists():
+        print(f"  ✗ insights_report.py not found — skipping")
+        print(f"  Expected path: {insight_script}")
+        return {}
+
+    insights_files = sorted(INSIGHTS_DIR.glob("insights_*.json"), reverse=True)
+    if not insights_files:
+        print("  ✗ No insights file found — run analyst first")
+        return {}
+
+    latest_insights = insights_files[0]
+    print(f"  Using: {latest_insights.name}")
+
+    sys.path.insert(0, str(BASE_DIR / "analyst"))
+    from insights_report import enrich_insights
+
+    try:
+        enriched = enrich_insights(latest_insights, provider=provider)
+        print(f"  ✓ Insight report complete — {len(enriched.get('personas', {}))} personas enriched")
+        return enriched
+    except Exception as e:
+        print(f"  ✗ Insight report failed: {e}")
+        return {}
+
 
 # ── Step 4: Generate Consolidated Report ──────────────────────────────────────
 
@@ -168,7 +186,9 @@ def generate_report(
     response_files: dict,
     eval_summary:   dict,
     insights:       dict,
+    insight_report: dict,
 ) -> Path:
+
     """
     Combines all outputs into a single consolidated report JSON.
     """
@@ -268,14 +288,16 @@ def main():
         print("\n✗ No responses generated — stopping pipeline.")
         sys.exit(1)
 
-    eval_summary = run_evaluation()
-    insights = run_analyst(response_files, provider=args.provider)
-    report_path  = generate_report(
+    eval_summary   = run_evaluation()
+    insights       = run_analyst(response_files, provider=args.provider)
+    insight_report = run_insight_report(provider=args.provider)
+    report_path    = generate_report(
         personas       = args.personas,
         provider       = args.provider,
         response_files = response_files,
         eval_summary   = eval_summary,
         insights       = insights,
+        insight_report = insight_report
     )
 
     print(f"\n✓ Pipeline complete → {report_path.relative_to(BASE_DIR)}")
