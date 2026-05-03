@@ -12,7 +12,7 @@ Usage (standalone):
 
 Usage (from Orchestrator):
     from orchestrator.question_generator import generate_questions
-    questions = generate_questions(topic="Visa card adoption", num_questions=5)
+    questions, tokens = generate_questions(topic="Visa card adoption", num_questions=5)
 """
 
 import os
@@ -30,6 +30,9 @@ BASE_DIR    = Path(__file__).parent.parent
 CONFIG_FILE = BASE_DIR / "config.json"
 SURVEY_DIR  = BASE_DIR / "survey"
 SURVEY_DIR.mkdir(exist_ok=True)
+
+# ── Token tracking ────────────────────────────────────────────────────────────
+_token_log = []
 
 # ── Load .env ─────────────────────────────────────────────────────────────────
 
@@ -60,12 +63,10 @@ def load_config() -> dict:
 # ── IAM Token ─────────────────────────────────────────────────────────────────
 
 _iam_token_cache = None
-_iam_token_expiry = 0  # ← expire time in epoch seconds
+_iam_token_expiry = 0
 
 def get_iam_token() -> str:
     global _iam_token_cache, _iam_token_expiry
-
-    # Token yoksa veya süresi dolduysa yeni al
     if not _iam_token_cache or time.time() >= _iam_token_expiry:
         resp = requests.post(
             "https://iam.cloud.ibm.com/identity/token",
@@ -80,8 +81,6 @@ def get_iam_token() -> str:
         data = resp.json()
         _iam_token_cache  = data["access_token"]
         _iam_token_expiry = time.time() + data.get("expires_in", 3600) - 60
-        # safety margin renovate before actual expiry
-
     return _iam_token_cache
 
 # ── LLM Call ──────────────────────────────────────────────────────────────────
@@ -126,39 +125,26 @@ def call_watsonx(prompt: str, config: dict) -> str:
             continue
         print("STATUS:", resp.status_code)
         resp.raise_for_status()
-        return resp.json()["results"][0]["generated_text"].strip()
+        raw_response = resp.json()
+        # ── Token tracking ────────────────────────────────────────────────
+        r = raw_response["results"][0]
+        _token_log.append({
+            "input_tokens":  r.get("input_token_count", 0),
+            "output_tokens": r.get("generated_token_count", 0),
+        })
+        # ─────────────────────────────────────────────────────────────────
+        return r["generated_text"].strip()
 
     resp.raise_for_status()
 
 
 def call_mock(prompt: str, config: dict) -> str:
-    """Mock LLM for testing without API calls."""
     return json.dumps([
-        {
-            "id": "Q1",
-            "category": "price_sensitivity",
-            "text": "[MOCK] Would you pay CHF 5/month for a card with cashback on groceries?"
-        },
-        {
-            "id": "Q2",
-            "category": "feature_preference",
-            "text": "[MOCK] Which feature matters most: cashback, travel insurance, or no foreign fees?"
-        },
-        {
-            "id": "Q3",
-            "category": "behavior_switching",
-            "text": "[MOCK] What would make you switch from Twint to a Visa card?"
-        },
-        {
-            "id": "Q4",
-            "category": "trade_off",
-            "text": "[MOCK] Is CHF 50 welcome bonus worth a CHF 72 yearly fee to you?"
-        },
-        {
-            "id": "Q5",
-            "category": "willingness_to_pay",
-            "text": "[MOCK] What is the maximum monthly fee you would accept for a Visa card?"
-        },
+        {"id": "Q1", "category": "price_sensitivity",  "text": "[MOCK] Would you pay CHF 5/month for a card with cashback on groceries?"},
+        {"id": "Q2", "category": "feature_preference",  "text": "[MOCK] Which feature matters most: cashback, travel insurance, or no foreign fees?"},
+        {"id": "Q3", "category": "behavior_switching",  "text": "[MOCK] What would make you switch from Twint to a Visa card?"},
+        {"id": "Q4", "category": "trade_off",           "text": "[MOCK] Is CHF 50 welcome bonus worth a CHF 72 yearly fee to you?"},
+        {"id": "Q5", "category": "willingness_to_pay",  "text": "[MOCK] What is the maximum monthly fee you would accept for a Visa card?"},
     ])
 
 # ── Prompt Builder ────────────────────────────────────────────────────────────
@@ -211,10 +197,6 @@ Return ONLY the JSON array with {num_questions} questions. [/INST]"""
 # ── Parse LLM Response ────────────────────────────────────────────────────────
 
 def parse_questions(raw: str, num_questions: int) -> list:
-    """
-    Parses the LLM response into a list of question dicts.
-    Handles cases where the LLM adds extra text around the JSON.
-    """
     raw   = raw.strip()
     start = raw.find("[")
     end   = raw.rfind("]") + 1
@@ -231,10 +213,7 @@ def parse_questions(raw: str, num_questions: int) -> list:
         if last == -1:
             raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
         json_str = json_str[:last + 1] + "]"
-        try:
-            questions = json.loads(json_str)
-        except json.JSONDecodeError:
-            raise ValueError(f"Could not parse questions JSON:\n{json_str[:200]}")
+        questions = json.loads(json_str)
 
     validated = []
     for i, q in enumerate(questions, 1):
@@ -299,6 +278,13 @@ def generate_questions(
 
     return questions
 
+# ── Token summary helper ──────────────────────────────────────────────────────
+
+def get_token_usage() -> dict:
+    total_in  = sum(r["input_tokens"]  for r in _token_log)
+    total_out = sum(r["output_tokens"] for r in _token_log)
+    return {"input_tokens": total_in, "output_tokens": total_out, "total_tokens": total_in + total_out}
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 def main():
@@ -315,7 +301,6 @@ def main():
         provider      = args.provider,
         save          = not args.no_save,
     )
-
     print(f"\n✓ Done — {len(questions)} questions generated.")
 
 

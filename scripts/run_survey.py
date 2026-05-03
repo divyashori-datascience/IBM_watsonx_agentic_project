@@ -61,6 +61,9 @@ PERSONA_PROMPT_MAP = {
     "retired":      "retired_prompt_v2.txt",       # Peter
 }
 
+# ── Token tracking ────────────────────────────────────────────────────────────
+_token_log = []
+
 # ── IAM Token ─────────────────────────────────────────────────────────────────
 
 _iam_token_cache = None
@@ -125,7 +128,15 @@ def call_watsonx(system_prompt: str, messages: list) -> str:
             continue
         print("STATUS:", resp.status_code)
         resp.raise_for_status()
-        raw = resp.json()["results"][0]["generated_text"].strip()
+        raw_response = resp.json()
+        # ── Token tracking ────────────────────────────────────────────────
+        r = raw_response["results"][0]
+        _token_log.append({
+            "input_tokens":  r.get("input_token_count", 0),
+            "output_tokens": r.get("generated_token_count", 0),
+        })
+        # ─────────────────────────────────────────────────────────────────
+        raw = r["generated_text"].strip()
         if "[/ANS]" in raw:
             raw = raw.split("[/ANS]")[0]
         elif "<<ANS>>" in raw:
@@ -266,11 +277,20 @@ def run_survey(persona_key: str, provider: str) -> dict:
             "answers":     answers,       # all 3 runs for consistency check
         })
 
+    # ── Token summary for this persona ────────────────────────────────────
+    total_input  = sum(r["input_tokens"]  for r in _token_log)
+    total_output = sum(r["output_tokens"] for r in _token_log)
+
     return {
         "persona":   persona_key,
         "provider":  provider,
         "model":     model_name,
         "timestamp": datetime.now().isoformat(),
+        "token_usage": {
+            "input_tokens":  total_input,
+            "output_tokens": total_output,
+            "total_tokens":  total_input + total_output,
+        },
         "results":   results,
     }
 

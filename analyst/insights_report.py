@@ -26,6 +26,9 @@ BASE_DIR     = Path(__file__).parent.parent
 INSIGHTS_DIR = BASE_DIR / "insights"
 INSIGHTS_DIR.mkdir(parents=True, exist_ok=True)
 
+# ── Token tracking ────────────────────────────────────────────────────────────
+_token_log = []
+
 # ── Load .env ─────────────────────────────────────────────────────────────────
 
 def load_env():
@@ -123,7 +126,7 @@ def get_iam_token() -> str:
         _iam_token_expiry = time.time() + data.get("expires_in", 3600) - 60
     return _iam_token_cache
 
-# ── LLM Calls ─────────────────────────────────────────────────────────────────
+# ── LLM Call ──────────────────────────────────────────────────────────────────
 
 def call_watsonx(prompt: str) -> str:
     token      = get_iam_token()
@@ -162,217 +165,27 @@ def call_watsonx(prompt: str) -> str:
             continue
         print("STATUS:", resp.status_code)
         resp.raise_for_status()
-        return resp.json()["results"][0]["generated_text"].strip()
+        raw_response = resp.json()
+        # ── Token tracking ────────────────────────────────────────────────
+        r = raw_response["results"][0]
+        _token_log.append({
+            "input_tokens":  r.get("input_token_count", 0),
+            "output_tokens": r.get("generated_token_count", 0),
+        })
+        # ─────────────────────────────────────────────────────────────────
+        return r["generated_text"].strip()
 
     resp.raise_for_status()
 
 
+# ── Mock templates (unchanged) ────────────────────────────────────────────────
+
 MOCK_TEMPLATES = {
-    "Felix": {
-        "key_metrics": {
-            "max_monthly_fee_chf": "CHF 5",
-            "top_feature": "No annual fee or cashback on student spending",
-            "switching_intent": "low",
-            "twint_loyalty": "high — Twint is default for everything",
-            "welcome_bonus_effectiveness": "medium — CHF 20 bonus is attractive"
-        },
-        "category_insights": {
-            "price_sensitivity": {
-                "finding": "Extremely price-sensitive — any fee above CHF 5/month is an immediate barrier.",
-                "key_quote": "I don't see why I would pay a monthly fee when Twint is free.",
-                "tags": ["fee-free preferred", "CHF 5 hard ceiling", "value skeptic"]
-            },
-            "feature_preference": {
-                "finding": "Prefers simplicity over features — cashback on daily spending beats travel perks.",
-                "key_quote": "I just want something that works without me thinking about it.",
-                "tags": ["simplicity first", "grocery cashback", "no complex rewards"]
-            },
-            "behavior_switching": {
-                "finding": "Low switching intent — Twint covers all daily needs with no cost.",
-                "key_quote": "Twint works everywhere I go. I'd only switch if there was a real benefit.",
-                "tags": ["Twint loyal", "low switching readiness", "habit-driven"]
-            },
-            "trade_off": {
-                "finding": "Rejects CHF 50 welcome bonus if annual fee exceeds CHF 60.",
-                "key_quote": "The bonus disappears after one year but the fee stays forever.",
-                "tags": ["rejects one-time bonuses", "long-term cost focus", "annual fee averse"]
-            },
-            "willingness_to_pay": {
-                "finding": "Maximum CHF 5/month — only if card is free at student banks.",
-                "key_quote": "Maybe CHF 5 if I get something back every month.",
-                "tags": ["CHF 5 ceiling", "student budget", "fee-free preferred"]
-            }
-        },
-        "visa_recommendation": {
-            "viable_product": "Free student Visa card with 1% cashback on grocery and transport spending",
-            "avoid": ["annual fees above CHF 60", "complex points systems", "travel-focused perks"],
-            "acquisition_trigger": "Partnership with student banks — zero fee first year with automatic cashback"
-        }
-    },
-    "Lukas": {
-        "key_metrics": {
-            "max_monthly_fee_chf": "CHF 25-30",
-            "top_feature": "No foreign fees + travel insurance combo",
-            "switching_intent": "high",
-            "twint_loyalty": "medium — already uses credit card",
-            "welcome_bonus_effectiveness": "low — not a decision driver"
-        },
-        "category_insights": {
-            "price_sensitivity": {
-                "finding": "Value-driven, not price-sensitive. Immediately chooses CHF 8/month if ROI is clear.",
-                "key_quote": "The math clearly favors zero foreign fees.",
-                "tags": ["picks CHF 8/mo over variable fee", "evaluates CHF 5/mo on merit", "ROI focused"]
-            },
-            "feature_preference": {
-                "finding": "No foreign fees + travel insurance is the strongest combination for this segment.",
-                "key_quote": "Foreign fees and insurance have continuous value.",
-                "tags": ["no foreign fees + travel insurance wins", "2% cashback secondary", "travel-first"]
-            },
-            "behavior_switching": {
-                "finding": "Will switch if rewards are automatic and frictionless.",
-                "key_quote": "If I clearly see monthly net gains without changing behavior, I would switch.",
-                "tags": ["already credit card user", "high switching readiness", "no points systems"]
-            },
-            "trade_off": {
-                "finding": "Accepts net gain instantly — no hesitation at CHF 15 save / CHF 10 fee.",
-                "key_quote": "That is a clear net gain. As long as savings are consistent, I would pay.",
-                "tags": ["rejects CHF 50 bonus / CHF 72 cost", "accepts reliable net gain immediately"]
-            },
-            "willingness_to_pay": {
-                "finding": "CHF 25-30/month is the ceiling, conditional on strong travel insurance.",
-                "key_quote": "I would go up to CHF 25-30 per month, but only if the value clearly justifies it.",
-                "tags": ["max CHF 25-30/mo", "premium product tier", "Visa Infinite appropriate"]
-            }
-        },
-        "visa_recommendation": {
-            "viable_product": "Premium Visa card — CHF 20-25/month with zero foreign fees and travel insurance",
-            "avoid": ["welcome bonuses as primary hook", "points systems with thresholds"],
-            "acquisition_trigger": "Automatic value delivery — no effort required from the cardholder"
-        }
-    },
-    "Anna": {
-        "key_metrics": {
-            "max_monthly_fee_chf": "CHF 12",
-            "top_feature": "Grocery cashback — 1% on supermarket spending",
-            "switching_intent": "medium",
-            "twint_loyalty": "high — uses Twint for P2P and small purchases",
-            "welcome_bonus_effectiveness": "medium — needs to offset first year fee"
-        },
-        "category_insights": {
-            "price_sensitivity": {
-                "finding": "Budget-conscious — needs to see clear monthly savings before committing to a fee.",
-                "key_quote": "I would need to calculate if the cashback actually covers the monthly fee.",
-                "tags": ["CHF 12 ceiling", "monthly savings required", "budget-first mindset"]
-            },
-            "feature_preference": {
-                "finding": "Grocery cashback is the primary motivator — covers largest monthly spend category.",
-                "key_quote": "I spend a lot at Migros and Coop. Cashback there would add up quickly.",
-                "tags": ["grocery cashback priority", "Migros/Coop focus", "practical features only"]
-            },
-            "behavior_switching": {
-                "finding": "Would switch if free trial proves value — needs to experience benefit before committing.",
-                "key_quote": "I'd want to try it for a month before deciding to keep paying.",
-                "tags": ["trial-first adopter", "medium switching readiness", "proof required"]
-            },
-            "trade_off": {
-                "finding": "Accepts CHF 8/month only if monthly cashback consistently exceeds the fee.",
-                "key_quote": "If I save CHF 15 on groceries and pay CHF 8, that makes sense to me.",
-                "tags": ["positive ROI required", "CHF 8 sweet spot", "monthly calculation mindset"]
-            },
-            "willingness_to_pay": {
-                "finding": "CHF 8-12/month is acceptable if grocery cashback delivers consistent returns.",
-                "key_quote": "Up to CHF 12 if the cashback really works at my supermarkets.",
-                "tags": ["CHF 8-12 range", "cashback-dependent", "largest segment by population"]
-            }
-        },
-        "visa_recommendation": {
-            "viable_product": "Mass-market Visa card — CHF 8/month with 1% grocery cashback at Migros and Coop",
-            "avoid": ["travel-focused perks irrelevant to segment", "complex tier structures"],
-            "acquisition_trigger": "30-day free trial with guaranteed cashback on first grocery shop"
-        }
-    },
-    "Sandra": {
-        "key_metrics": {
-            "max_monthly_fee_chf": "CHF 10",
-            "top_feature": "Family purchase protection + grocery cashback",
-            "switching_intent": "medium",
-            "twint_loyalty": "medium — uses both Twint and debit card",
-            "welcome_bonus_effectiveness": "high — family budget makes bonuses attractive"
-        },
-        "category_insights": {
-            "price_sensitivity": {
-                "finding": "Joint household decision — both partners must agree before adopting a paid card.",
-                "key_quote": "I would need to discuss this with my partner before making any commitment.",
-                "tags": ["joint decision required", "CHF 10 ceiling", "household budget focus"]
-            },
-            "feature_preference": {
-                "finding": "Purchase protection for large family purchases is equally valued as grocery cashback.",
-                "key_quote": "When you buy appliances or electronics for a family, protection matters.",
-                "tags": ["purchase protection valued", "grocery cashback", "family-scale spending"]
-            },
-            "behavior_switching": {
-                "finding": "Would switch if family-wide card covers multiple cardholders under one fee.",
-                "key_quote": "If we could both use the card and share the cashback, that would be worth it.",
-                "tags": ["family plan preferred", "shared account appeal", "medium switching readiness"]
-            },
-            "trade_off": {
-                "finding": "Accepts CHF 8/month only if both grocery cashback and purchase protection are included.",
-                "key_quote": "The cashback alone might not be enough. I'd want the protection too.",
-                "tags": ["dual feature requirement", "CHF 8 acceptable with full package", "value bundling"]
-            },
-            "willingness_to_pay": {
-                "finding": "CHF 8-10/month if card delivers clear family value — household decision gate applies.",
-                "key_quote": "Ten francs a month is reasonable if we actually save more than that.",
-                "tags": ["CHF 10 ceiling", "family ROI mindset", "second largest segment"]
-            }
-        },
-        "visa_recommendation": {
-            "viable_product": "Family Visa card — CHF 8/month with grocery cashback + purchase protection",
-            "avoid": ["individual-only positioning", "travel perks as primary hook", "complex points redemption"],
-            "acquisition_trigger": "Family plan with shared cashback pool — position as household financial tool"
-        }
-    },
-    "Peter": {
-        "key_metrics": {
-            "max_monthly_fee_chf": "CHF 5",
-            "top_feature": "Simple interface + fraud protection",
-            "switching_intent": "low",
-            "twint_loyalty": "low — prefers cash and debit card",
-            "welcome_bonus_effectiveness": "low — trust more important than incentives"
-        },
-        "category_insights": {
-            "price_sensitivity": {
-                "finding": "Fixed income constraint — any monthly fee above CHF 5 is a hard rejection.",
-                "key_quote": "I live on a pension. Every franc counts and I don't pay for things I don't need.",
-                "tags": ["CHF 5 hard ceiling", "fixed income constraint", "fee averse"]
-            },
-            "feature_preference": {
-                "finding": "Security and simplicity override all other features — fraud protection is non-negotiable.",
-                "key_quote": "I need to know my money is safe and the card is easy to use.",
-                "tags": ["security first", "simplicity required", "no complex features"]
-            },
-            "behavior_switching": {
-                "finding": "Very low switching intent — established cash and debit habits are deeply ingrained.",
-                "key_quote": "I've been using the same bank for 30 years. Switching is not something I do easily.",
-                "tags": ["habit-driven", "low switching readiness", "trust-first adopter"]
-            },
-            "trade_off": {
-                "finding": "No trade-off acceptable above CHF 5 — trust barrier prevents adoption at any premium tier.",
-                "key_quote": "A bonus means nothing if I don't understand or trust the product.",
-                "tags": ["trust barrier dominant", "bonus ineffective", "rejects premium tiers"]
-            },
-            "willingness_to_pay": {
-                "finding": "Maximum CHF 5/month — only if card is offered through existing trusted bank relationship.",
-                "key_quote": "If my bank offered it and it was simple, I might consider it for five francs.",
-                "tags": ["CHF 5 ceiling", "bank-trust dependency", "not priority acquisition target"]
-            }
-        },
-        "visa_recommendation": {
-            "viable_product": "Basic Visa debit card — no monthly fee or maximum CHF 5 via existing bank partner",
-            "avoid": ["premium positioning", "complex cashback structures", "digital-first onboarding"],
-            "acquisition_trigger": "Bank partnership model — existing trust relationship is the only viable entry point"
-        }
-    }
+    "Felix":  {"key_metrics": {"max_monthly_fee_chf": "CHF 5",     "top_feature": "No annual fee", "switching_intent": "low",    "twint_loyalty": "high",   "welcome_bonus_effectiveness": "medium"}, "category_insights": {"price_sensitivity": {"finding": "Fee above CHF 5 is immediate barrier.", "key_quote": "I don't pay fees when Twint is free.", "tags": ["fee-free preferred"]}, "feature_preference": {"finding": "Simplicity over features.", "key_quote": "Just something that works.", "tags": ["simplicity first"]}, "behavior_switching": {"finding": "Low — Twint covers all needs.", "key_quote": "I'd only switch for real benefit.", "tags": ["Twint loyal"]}, "trade_off": {"finding": "Rejects bonus if annual fee exceeds CHF 60.", "key_quote": "Fee stays forever, bonus disappears.", "tags": ["long-term cost focus"]}, "willingness_to_pay": {"finding": "Max CHF 5/month.", "key_quote": "Maybe CHF 5 if I get something back.", "tags": ["CHF 5 ceiling"]}}, "visa_recommendation": {"viable_product": "Free student Visa card with 1% cashback", "avoid": ["annual fees above CHF 60"], "acquisition_trigger": "Student bank partnership"}},
+    "Lukas":  {"key_metrics": {"max_monthly_fee_chf": "CHF 25-30", "top_feature": "No foreign fees + travel insurance", "switching_intent": "high",   "twint_loyalty": "medium", "welcome_bonus_effectiveness": "low"},    "category_insights": {"price_sensitivity": {"finding": "Value-driven not price-sensitive.", "key_quote": "The math clearly favors zero foreign fees.", "tags": ["ROI focused"]}, "feature_preference": {"finding": "No foreign fees + travel insurance wins.", "key_quote": "Foreign fees have continuous value.", "tags": ["travel-first"]}, "behavior_switching": {"finding": "Will switch if rewards are frictionless.", "key_quote": "If I see monthly net gains I would switch.", "tags": ["high switching readiness"]}, "trade_off": {"finding": "Accepts net gain instantly.", "key_quote": "That is a clear net gain.", "tags": ["rejects one-time bonuses"]}, "willingness_to_pay": {"finding": "CHF 25-30 ceiling.", "key_quote": "Up to CHF 25-30 if value justifies it.", "tags": ["premium tier"]}}, "visa_recommendation": {"viable_product": "Premium Visa — CHF 20-25/month with travel insurance", "avoid": ["points systems"], "acquisition_trigger": "Automatic value delivery"}},
+    "Anna":   {"key_metrics": {"max_monthly_fee_chf": "CHF 12",    "top_feature": "Grocery cashback", "switching_intent": "medium", "twint_loyalty": "high",   "welcome_bonus_effectiveness": "medium"}, "category_insights": {"price_sensitivity": {"finding": "Needs clear monthly savings before committing.", "key_quote": "I need to calculate if cashback covers the fee.", "tags": ["budget-first"]}, "feature_preference": {"finding": "Grocery cashback is primary motivator.", "key_quote": "I spend a lot at Migros. Cashback adds up.", "tags": ["grocery cashback"]}, "behavior_switching": {"finding": "Would switch if trial proves value.", "key_quote": "I'd want to try it for a month first.", "tags": ["trial-first"]}, "trade_off": {"finding": "Accepts CHF 8 if cashback consistently exceeds fee.", "key_quote": "If I save CHF 15 and pay CHF 8 that makes sense.", "tags": ["positive ROI required"]}, "willingness_to_pay": {"finding": "CHF 8-12 if grocery cashback delivers.", "key_quote": "Up to CHF 12 if cashback really works.", "tags": ["CHF 8-12 range"]}}, "visa_recommendation": {"viable_product": "Mass-market Visa — CHF 8/month with 1% grocery cashback", "avoid": ["travel perks"], "acquisition_trigger": "30-day free trial"}},
+    "Sandra": {"key_metrics": {"max_monthly_fee_chf": "CHF 10",    "top_feature": "Family purchase protection + grocery cashback", "switching_intent": "medium", "twint_loyalty": "medium", "welcome_bonus_effectiveness": "high"},   "category_insights": {"price_sensitivity": {"finding": "Joint household decision required.", "key_quote": "I need to discuss with my partner first.", "tags": ["joint decision"]}, "feature_preference": {"finding": "Purchase protection equally valued as cashback.", "key_quote": "When buying appliances protection matters.", "tags": ["purchase protection"]}, "behavior_switching": {"finding": "Would switch for family-wide card.", "key_quote": "If we could share the cashback that would be worth it.", "tags": ["family plan preferred"]}, "trade_off": {"finding": "Needs both cashback and protection for CHF 8.", "key_quote": "The cashback alone might not be enough.", "tags": ["dual feature requirement"]}, "willingness_to_pay": {"finding": "CHF 8-10 if family value is clear.", "key_quote": "Ten francs is reasonable if we save more.", "tags": ["CHF 10 ceiling"]}}, "visa_recommendation": {"viable_product": "Family Visa — CHF 8/month with cashback + protection", "avoid": ["individual-only positioning"], "acquisition_trigger": "Family plan with shared cashback pool"}},
+    "Peter":  {"key_metrics": {"max_monthly_fee_chf": "CHF 5",     "top_feature": "Simple interface + fraud protection", "switching_intent": "low",    "twint_loyalty": "low",    "welcome_bonus_effectiveness": "low"},    "category_insights": {"price_sensitivity": {"finding": "Fixed income — any fee above CHF 5 rejected.", "key_quote": "I live on a pension. Every franc counts.", "tags": ["CHF 5 hard ceiling"]}, "feature_preference": {"finding": "Security and simplicity override all features.", "key_quote": "I need to know my money is safe.", "tags": ["security first"]}, "behavior_switching": {"finding": "Very low — habits deeply ingrained.", "key_quote": "I've used the same bank for 30 years.", "tags": ["habit-driven"]}, "trade_off": {"finding": "No trade-off above CHF 5.", "key_quote": "A bonus means nothing if I don't trust the product.", "tags": ["trust barrier dominant"]}, "willingness_to_pay": {"finding": "Max CHF 5 via trusted bank.", "key_quote": "If my bank offered it simply I might consider five francs.", "tags": ["CHF 5 ceiling"]}}, "visa_recommendation": {"viable_product": "Basic Visa debit — no fee or max CHF 5 via bank partner", "avoid": ["premium positioning"], "acquisition_trigger": "Bank partnership model"}},
 }
 
 
@@ -406,6 +219,13 @@ def build_prompt(persona_name: str, persona_responses: list, raw_insights: dict)
         f"Raw verdicts:\n{json.dumps(verdicts, indent=2)}\n\n"
         f"Produce the enriched insight JSON for {persona_name} only."
     )
+
+# ── Token summary helper ──────────────────────────────────────────────────────
+
+def get_token_usage() -> dict:
+    total_in  = sum(r["input_tokens"]  for r in _token_log)
+    total_out = sum(r["output_tokens"] for r in _token_log)
+    return {"input_tokens": total_in, "output_tokens": total_out, "total_tokens": total_in + total_out}
 
 # ── Main enricher ─────────────────────────────────────────────────────────────
 
@@ -453,7 +273,6 @@ def enrich_insights(insights_path: Path, provider: str = "watsonx") -> dict:
         except Exception as e:
             print(f"  ✗ Failed to enrich {persona_name}: {e}")
 
-    # Save
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path  = INSIGHTS_DIR / f"insight_report_{timestamp}.json"
     with open(out_path, "w", encoding="utf-8") as f:
@@ -470,14 +289,14 @@ def get_latest_insights() -> Path | None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Enrich insights JSON with category-level persona behaviors")
+    parser = argparse.ArgumentParser(description="Enrich insights JSON")
     parser.add_argument("--input",    type=str, default=None)
     parser.add_argument("--provider", choices=["watsonx", "mock"], default="watsonx")
     args = parser.parse_args()
 
     insights_path = Path(args.input) if args.input else get_latest_insights()
     if not insights_path:
-        print("✗ No insights file found. Run orchestrator first.")
+        print("✗ No insights file found.")
         sys.exit(1)
 
     print(f"\n{'═' * 60}")

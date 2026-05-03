@@ -32,6 +32,9 @@ RESPONSES_DIR = BASE_DIR / "responses"
 INSIGHTS_DIR  = BASE_DIR / "insights"
 INSIGHTS_DIR.mkdir(exist_ok=True)
 
+# ── Token tracking ────────────────────────────────────────────────────────────
+_token_log = []
+
 # ── Load .env ─────────────────────────────────────────────────────────────────
 
 def load_env():
@@ -50,7 +53,7 @@ def load_env():
 
 load_env()
 
-# ── Persona metadata (from analyst JSON — segment_weighting) ──────────────────
+# ── Persona metadata ──────────────────────────────────────────────────────────
 
 PERSONA_METADATA = {
     "student": {
@@ -90,25 +93,24 @@ PERSONA_METADATA = {
     },
 }
 
-# ── System prompt (from analyst JSON — agent_identity.system_role) ────────────
+# ── System prompt ─────────────────────────────────────────────────────────────
 
-ANALYST_SYSTEM_PROMPT = """You are a consumer insights analyst specialising in Swiss retail banking and payment products. You work on behalf of VISA's product strategy team. You have just received structured responses from five synthetic Swiss consumer personas — Felix (Student), Lukas (Professional/DINK), Anna (Mittelstand), Sandra (Family), and Peter (Retired). Your job is to analyse their responses, identify patterns, surface pricing thresholds and adoption barriers, and produce a structured, actionable insight report. You do not simulate any of these consumers — you reason analytically about them as a population. Your audience is a senior VISA product team. Be precise, evidence-grounded, and commercial in your framing.
+ANALYST_SYSTEM_PROMPT = """You are a Visa Switzerland consumer insights analyst. 
+Analyse survey responses from 5 Swiss personas and produce a structured JSON insight report.
 
-Population weights for Swiss adult population (7.1M adults total):
-- Campus Felix (Student): 8% — ~570,000 adults — fee ceiling CHF 5
-- Mobile-First Lukas (Professional/DINK): 12% — ~850,000 adults — fee ceiling CHF 25-30
-- Average-Earner Anna (Mittelstand): 28% — ~1,990,000 adults — fee ceiling CHF 12
-- Value-Smart Sandra (Family): 22% — ~1,560,000 adults — fee ceiling CHF 10
-- Trust-First Peter (Retired): 18% — ~1,280,000 adults — fee ceiling CHF 5
+Segments (population weight — fee ceiling):
+- Felix/Student: 8% — CHF 5
+- Lukas/Professional: 12% — CHF 25-30
+- Anna/Mittelstand: 28% — CHF 12
+- Sandra/Family: 22% — CHF 10
+- Peter/Retired: 18% — CHF 5
 
-Reasoning rules:
-- Always convert monthly fees to annual cost — Swiss consumers frame fees annually
-- MAYBE verdict = 45% adoption probability. YES = 85%. NO = 5%
-- Population weight is the multiplier — Anna (28%) matters 3.5x more than Felix (8%) for market sizing
-- NEVER recommend a price above CHF 8 as mass market sweet spot without explicit justification
-- NEVER classify Peter (Retired) as a priority acquisition target
-- NEVER present MAYBE as equivalent to YES in adoption calculations
-- If 3+ segments return NO at a price point — flag this price as not viable for mass market
+Rules:
+- Anna (28%) matters most for market sizing
+- MAYBE=45%, YES=85%, NO=5% adoption probability
+- Mass market sweet spot: CHF 8 max unless justified
+- Peter is NOT a priority acquisition target
+- 3+ NO segments = price not viable for mass market
 
 Produce a JSON object with these fields only:
 {
@@ -133,7 +135,6 @@ Produce a JSON object with these fields only:
 
 Return ONLY the JSON object. No explanation, no markdown, no extra text.
 IMPORTANT: You MUST always return a complete valid JSON object. Never return an empty response."""
-
 
 # ── IAM Token ─────────────────────────────────────────────────────────────────
 
@@ -173,8 +174,8 @@ def call_watsonx(prompt: str) -> str:
         "project_id": project_id,
         "input":      full_prompt,
         "parameters": {
-            "max_new_tokens":     3000,
-            "temperature":        0.3,
+            "max_new_tokens":     4000,
+            "temperature":        0.2,
             "repetition_penalty": 1.1,
             "stop_sequences":     ["</s>", "[/INST]", "<|eom_id|>"],
         },
@@ -197,13 +198,20 @@ def call_watsonx(prompt: str) -> str:
             continue
         print("STATUS:", resp.status_code)
         resp.raise_for_status()
-        return resp.json()["results"][0]["generated_text"].strip()
+        raw_response = resp.json()
+        # ── Token tracking ────────────────────────────────────────────────
+        r = raw_response["results"][0]
+        _token_log.append({
+            "input_tokens":  r.get("input_token_count", 0),
+            "output_tokens": r.get("generated_token_count", 0),
+        })
+        # ─────────────────────────────────────────────────────────────────
+        return r["generated_text"].strip()
 
     resp.raise_for_status()
 
 
 def call_mock(prompt: str) -> str:
-    """Mock response for testing without API calls."""
     return json.dumps({
         "insight_id":        "insight_mock_run",
         "generated_at":      datetime.now().isoformat(),
@@ -216,7 +224,7 @@ def call_mock(prompt: str) -> str:
             "Sandra":  {"verdict": "MAYBE", "key_reasoning": "Joint decision required with partner", "fee_ceiling": "CHF 10"},
             "Peter":   {"verdict": "NO",    "key_reasoning": "Fee above ceiling, trust barrier", "fee_ceiling": "CHF 5"},
         },
-        "cross_segment_insight": "[MOCK] Sandra and Anna both prioritize grocery cashback. Felix and Peter reject fees above CHF 5.",
+        "cross_segment_insight": "[MOCK] Sandra and Anna both prioritize grocery cashback.",
         "pricing_sweet_spot": "CHF 8 — balances mass market adoption with revenue generation",
         "top_features": ["grocery cashback", "purchase protection", "simple fee structure"],
         "main_barriers": ["fee anxiety", "joint decision required for family segment"],
@@ -224,7 +232,7 @@ def call_mock(prompt: str) -> str:
         "confidence_level": "MEDIUM",
     })
 
-# ── Format input bundle (from analyst JSON — input_schema) ────────────────────
+# ── Format input bundle ───────────────────────────────────────────────────────
 
 def format_input_bundle(survey_run_id: str, question: dict, responses: dict) -> str:
     response_objects = []
@@ -235,7 +243,6 @@ def format_input_bundle(survey_run_id: str, question: dict, responses: dict) -> 
         if not answer:
             missing_personas.append(persona_key)
             continue
-
         response_objects.append({
             "persona_id":            meta["persona_id"],
             "agent_label":           meta["agent_label"],
@@ -263,12 +270,21 @@ def format_input_bundle(survey_run_id: str, question: dict, responses: dict) -> 
 # ── Parse LLM response ────────────────────────────────────────────────────────
 
 def parse_insight(raw: str) -> dict:
-    """Extracts JSON from LLM response — handles extra text around the JSON."""
-    raw = raw.strip()
+    raw   = raw.strip()
     start = raw.find("{")
-    end   = raw.rfind("}") + 1
-    if start == -1 or end == 0:
-        raise ValueError(f"No JSON object found in analyst response:\n{raw[:500]}")
+    if start == -1:
+        raise ValueError(f"No JSON object found:\n{raw[:500]}")
+    # Parantez sayarak doğru sonu bul
+    depth = 0
+    end   = start
+    for i, ch in enumerate(raw[start:], start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = i + 1
+                break
     return json.loads(raw[start:end])
 
 # ── Core analyst function ─────────────────────────────────────────────────────
@@ -280,13 +296,18 @@ def analyse_question(
     provider:      str = "watsonx",
 ) -> dict:
     prompt = format_input_bundle(survey_run_id, question, responses)
-
     if provider == "mock":
         raw = call_mock(prompt)
     else:
         raw = call_watsonx(prompt)
-
     return parse_insight(raw)
+
+# ── Token summary helper ──────────────────────────────────────────────────────
+
+def get_token_usage() -> dict:
+    total_in  = sum(r["input_tokens"]  for r in _token_log)
+    total_out = sum(r["output_tokens"] for r in _token_log)
+    return {"input_tokens": total_in, "output_tokens": total_out, "total_tokens": total_in + total_out}
 
 # ── Run analyst on response files ─────────────────────────────────────────────
 
@@ -295,13 +316,11 @@ def run_analyst(response_files: dict, provider: str = "watsonx") -> dict:
         print("  ✗ No response files provided to analyst")
         return {}
 
-    # Load all response data
     persona_data = {}
     for persona_key, file_path in response_files.items():
         with open(file_path, encoding="utf-8") as f:
             persona_data[persona_key] = json.load(f)
 
-    # Get questions from first persona's response
     first_persona = next(iter(persona_data.values()))
     questions     = first_persona.get("results", [])
     survey_run_id = f"visa_survey_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -316,7 +335,6 @@ def run_analyst(response_files: dict, provider: str = "watsonx") -> dict:
 
         print(f"\n  → Analysing {q_id}...")
 
-        # Collect primary answer from each persona for this question
         responses = {}
         for persona_key, data in persona_data.items():
             for result in data.get("results", []):
@@ -333,7 +351,6 @@ def run_analyst(response_files: dict, provider: str = "watsonx") -> dict:
         except Exception as e:
             print(f"  ✗ Failed to analyse {q_id}: {e}")
 
-    # Save consolidated insight file
     output = {
         "survey_run_id":   survey_run_id,
         "generated_at":    datetime.now().isoformat(),
@@ -357,9 +374,9 @@ def get_latest_response(persona: str) -> Path | None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Analyst Agent — generates insight JSONs from persona responses")
-    parser.add_argument("--all",      action="store_true", help="Run analyst on all latest persona responses")
-    parser.add_argument("--response", type=str,            help="Path to a single persona response JSON file")
+    parser = argparse.ArgumentParser(description="Analyst Agent")
+    parser.add_argument("--all",      action="store_true")
+    parser.add_argument("--response", type=str)
     parser.add_argument("--provider", choices=["watsonx", "mock"], default="watsonx")
     args = parser.parse_args()
 
@@ -372,14 +389,9 @@ def main():
             file = get_latest_response(persona)
             if file:
                 response_files[persona] = file
-                print(f"  ✓ Found: {file.name}")
-            else:
-                print(f"  ✗ No response found for {persona}")
-
         if not response_files:
-            print("✗ No response files found. Run run_survey.py first.")
+            print("✗ No response files found.")
             sys.exit(1)
-
         run_analyst(response_files, args.provider)
 
     elif args.response:
@@ -387,7 +399,6 @@ def main():
         if not file.exists():
             print(f"✗ File not found: {file}")
             sys.exit(1)
-
         persona = file.stem.split("_")[0]
         run_analyst({persona: file}, args.provider)
 
