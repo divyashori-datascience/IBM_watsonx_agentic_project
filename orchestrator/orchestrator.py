@@ -19,6 +19,7 @@ import sys
 import json
 import argparse
 import subprocess
+from langfuse import Langfuse
 from datetime import datetime
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -264,6 +265,19 @@ def generate_report(
 # ── Main Orchestrator ─────────────────────────────────────────────────────────
 
 def main():
+
+    # Load .env first
+    from evaluation_utils import load_env
+    load_env()
+    
+    # Then init Langfuse
+    global langfuse
+    langfuse = Langfuse(
+        public_key=os.environ.get("LANGFUSE_PUBLIC_KEY"),
+        secret_key=os.environ.get("LANGFUSE_SECRET_KEY"),
+        host=os.environ.get("LANGFUSE_HOST")
+    )
+
     parser = argparse.ArgumentParser(description="Orchestrator — runs the full multi-agent pipeline")
     parser.add_argument(
         "--topic",
@@ -298,6 +312,12 @@ def main():
     pipeline_start = time.time()
     section("STEP 0 — GENERATING SURVEY QUESTIONS")
     print(f"\n  Topic: {args.topic}")
+
+    trace = langfuse.trace(
+        name="orchestrator_pipeline",
+        metadata={"provider": args.provider, "personas": args.personas, "topic": args.topic}
+    )
+
     questions = generate_questions(
         topic    = args.topic,
         provider = args.provider,
@@ -316,6 +336,9 @@ def main():
     insight_report = run_insight_report(provider=args.provider)
 
     elapsed = round(time.time() - pipeline_start, 1)
+
+    langfuse.score(trace_id=trace.id, name="pipeline_duration_seconds", value=elapsed)
+    langfuse.score(trace_id=trace.id, name="personas_completed", value=len(response_files))
 
     # ── Collect token breakdown from all steps ────────────────────────────
     from question_generator import get_token_usage as qg_tokens
@@ -362,6 +385,14 @@ def main():
         elapsed         = elapsed,
         token_breakdown = token_breakdown,
     )
+
+    langfuse.score(
+        trace_id=trace.id,
+        name="differentiation_score",
+        value=eval_summary.get("differentiation") or 0.0
+    )
+    langfuse.flush()
+    print("✓ Langfuse trace completed")
 
     print(f"\n✓ Pipeline complete → {report_path.relative_to(BASE_DIR)}")
 
