@@ -266,9 +266,15 @@ def generate_report(
 
 def main():
 
-    # Load .env first
-    from evaluation_utils import load_env
-    load_env()
+    env_path = BASE_DIR / ".env"
+    if env_path.exists():
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                os.environ.setdefault(key.strip(), value.strip())
     
     # Then init Langfuse
     global langfuse
