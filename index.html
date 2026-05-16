@@ -1,0 +1,2317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Visa Insight Studio — IBM watsonx Orchestrate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="/qdata.js"></script>
+<style>
+:root{
+  --visa:#1A56DB;--visa-light:#EFF6FF;--visa-mid:#DBEAFE;
+  --ibm-dark:#161616;--ibm-nav:#262626;
+  --green:#059669;--green-bg:#ECFDF5;--green-light:#D1FAE5;
+  --amber:#D97706;--amber-bg:#FFFBEB;--amber-light:#FDE68A;
+  --red:#DC2626;--red-bg:#FEF2F2;--red-light:#FECACA;
+  --purple:#7C3AED;--purple-bg:#F5F3FF;--purple-light:#DDD6FE;
+  --gray:#6B7280;--gray-bg:#F9FAFB;
+  --border:#E5E7EB;--border2:#D1D5DB;
+  --bg:#F3F4F8;--surface:#FFFFFF;
+  --text1:#111827;--text2:#374151;--text3:#6B7280;--text4:#9CA3AF;
+  --nav-h:52px;--sidebar-w:292px;--right-w:232px;
+  --r8:8px;--r12:12px;--r16:16px;
+  --shadow:0 1px 4px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  --shadow-lg:0 4px 16px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;font-family:'IBM Plex Sans',-apple-system,sans-serif;font-size:14px;color:var(--text1);background:var(--bg);}
+
+/* ── TOP NAV ─────────────────────────────────────────── */
+.topnav{position:fixed;top:0;left:0;right:0;z-index:300;height:var(--nav-h);background:var(--ibm-dark);display:flex;align-items:center;padding:0 20px;gap:0;border-bottom:1px solid #393939;}
+.nav-visa{font-size:26px;font-weight:900;font-style:italic;letter-spacing:2px;line-height:1;background:linear-gradient(135deg,#60A5FA,#93C5FD);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-div{width:1px;height:22px;background:#404040;margin:0 16px;}
+.nav-ibm{display:flex;align-items:center;gap:8px;color:#C6C6C6;font-size:13px;font-weight:500;}
+.ibm-chip{background:#0F62FE;color:#fff;font-size:9px;font-weight:800;padding:2px 5px;border-radius:2px;letter-spacing:.8px;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.nav-governed{display:inline-flex;align-items:center;gap:5px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34D399;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;}
+.nav-governed::before{content:'✓';}
+.nav-agents{color:#9CA3AF;font-size:11px;padding:4px 10px;border:1px solid #404040;border-radius:20px;}
+.download-btn{display:flex;align-items:center;gap:5px;background:rgba(247,166,0,.15);border:1px solid rgba(247,166,0,.3);color:#FBBF24;font-size:11px;font-weight:700;padding:5px 11px;border-radius:6px;cursor:pointer;transition:all .2s;font-family:inherit;}
+.download-btn:hover{background:rgba(247,166,0,.25);}
+.dl-group{display:none;align-items:center;background:rgba(247,166,0,.15);border:1px solid rgba(247,166,0,.3);border-radius:6px;overflow:hidden;}
+.dl-group.show{display:inline-flex;}
+.dl-group .dl-label{font-size:10px;font-weight:700;color:#FBBF24;letter-spacing:.4px;padding:5px 9px 5px 11px;border-right:1px solid rgba(247,166,0,.3);text-transform:uppercase;}
+.dl-group .dl-fmt{background:transparent;border:none;color:#FBBF24;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:3px;transition:background .15s;}
+.dl-group .dl-fmt:hover{background:rgba(247,166,0,.2);}
+.dl-group .dl-fmt+.dl-fmt{border-left:1px solid rgba(247,166,0,.25);}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--visa),#60A5FA);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+
+/* ── SHELL ─────────────────────────────────────────── */
+.shell{display:flex;height:calc(100vh - var(--nav-h) - 36px);margin-top:var(--nav-h);overflow:hidden;}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100%;overflow:hidden;}
+.sidebar-body{flex:1;padding:22px 18px 16px;display:flex;flex-direction:column;gap:16px;overflow:hidden;}
+.hero-sub{font-size:10px;font-weight:700;color:var(--visa);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:6px;}
+.hero-h{font-size:17px;font-weight:300;color:var(--text2);line-height:1.45;}
+.hero-h strong{font-weight:700;color:var(--text1);}
+.hero-em{font-style:italic;font-weight:700;color:var(--visa);position:relative;display:inline-block;}
+.hero-em::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--visa),#93C5FD);border-radius:2px;}
+.search-wrap{position:relative;}
+.search-input{width:100%;padding:10px 42px 10px 34px;border:1.5px solid var(--border2);border-radius:24px;font-size:13px;font-family:inherit;color:var(--text1);background:#FAFAFA;transition:border-color .2s,box-shadow .2s;outline:none;}
+.search-input:focus{border-color:var(--visa);background:#fff;box-shadow:0 0 0 3px rgba(26,86,219,.08);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--visa);pointer-events:none;}
+.search-btn{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:var(--visa);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;transition:background .2s,transform .15s;}
+.search-btn:hover{background:#1240B0;transform:translateY(-50%) scale(1.06);}
+.search-btn:active{transform:translateY(-50%) scale(.94);}
+.intent-badge{display:inline-flex;align-items:center;gap:5px;background:#1E293B;color:#94A3B8;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+.pf-label{font-size:10px;font-weight:600;color:var(--text4);letter-spacing:.8px;text-transform:uppercase;margin-bottom:7px;}
+.pf-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.pf-all{padding:4px 10px;border-radius:20px;border:1.5px solid var(--border2);background:#F8F9FB;font-size:10px;font-weight:700;color:var(--text3);cursor:pointer;font-family:inherit;transition:all .15s;}
+.pf-all.active{background:var(--ibm-dark);border-color:var(--ibm-dark);color:#fff;}
+.pf-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;cursor:pointer;border:2.5px solid transparent;transition:all .15s;position:relative;flex-shrink:0;}
+.pf-avatar:hover{transform:scale(1.1);}
+.pf-avatar.active{border-color:#fff;box-shadow:0 0 0 2.5px var(--visa),0 4px 12px rgba(0,0,0,.15);}
+.chips-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.chips-label{font-size:10px;font-weight:600;color:var(--text4);letter-spacing:.8px;text-transform:uppercase;}
+.chips-count{font-size:10px;color:var(--visa);font-weight:700;background:var(--visa-light);padding:2px 7px;border-radius:20px;}
+.chips-grid{display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex:1;min-height:0;}
+.chips-grid::-webkit-scrollbar{width:3px;}
+.chips-grid::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.chip-cat{font-size:9px;font-weight:700;color:var(--text4);letter-spacing:1px;text-transform:uppercase;margin-top:6px;margin-bottom:2px;padding-bottom:4px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px;}
+.chip{padding:7px 10px;border-radius:var(--r8);background:#F8F9FB;border:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.35;cursor:pointer;transition:all .15s;font-weight:400;text-align:left;font-family:inherit;display:flex;align-items:flex-start;gap:8px;}
+.chip:hover{background:var(--visa-light);border-color:var(--visa);color:var(--visa);}
+.chip-icon{font-size:13px;flex-shrink:0;margin-top:1px;}
+.chip-text{flex:1;}
+.chip-text strong{display:block;font-weight:700;font-size:10px;color:var(--text3);margin-bottom:1px;}
+.chip:hover .chip-text strong{color:var(--visa);}
+.chip-cta{padding:10px 12px;background:linear-gradient(180deg,#FFFFFF,#F8F9FB);border:1px solid var(--border);border-radius:var(--r8);display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s;font-family:inherit;text-align:left;}
+.chip-cta:hover{background:var(--visa-light);border-color:var(--visa);transform:translateX(2px);}
+.chip-cta .chip-icon{font-size:18px;}
+.chip-cta .chip-text strong{font-size:11px;color:var(--text2);}
+.chip-cta:hover .chip-text strong{color:var(--visa);}
+.chip-cta .chip-arrow{margin-left:auto;color:var(--text4);font-size:14px;font-weight:600;}
+.chip-cta:hover .chip-arrow{color:var(--visa);}
+.chip-back{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:var(--visa);background:none;border:none;cursor:pointer;padding:4px 0;margin-bottom:4px;font-family:inherit;letter-spacing:.4px;}
+.chip-back:hover{text-decoration:underline;}
+.chip-intro{font-size:11px;color:var(--text3);line-height:1.5;padding:4px 2px 8px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.chip-intro strong{color:var(--text2);font-weight:600;}
+
+/* ── CHATBOT STYLES ─────────────────────────────── */
+.chat-header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#F5F8FF,#FFFFFF);}
+.chat-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--visa),#0F62FE);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:800;flex-shrink:0;box-shadow:0 2px 8px rgba(26,86,219,.25);}
+.chat-title{font-size:13px;font-weight:700;color:var(--text1);line-height:1.2;}
+.chat-sub{font-size:10px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:4px;margin-top:2px;}
+.chat-sub::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse-dot 1.6s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:.4;}}
+.chat-stream{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:10px;min-height:0;}
+.chat-stream::-webkit-scrollbar{width:3px;}
+.chat-stream::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.msg-bot{display:flex;gap:8px;align-items:flex-start;animation:msgIn .3s ease;}
+.msg-bot-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--visa),#0F62FE);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:2px;}
+.msg-bot-bubble{background:#F1F5F9;border-radius:14px 14px 14px 4px;padding:10px 12px;font-size:12px;color:var(--text1);line-height:1.5;max-width:88%;}
+.msg-bot-bubble strong{font-weight:700;color:var(--visa);}
+.msg-user{display:flex;justify-content:flex-end;animation:msgIn .3s ease;}
+.msg-user-bubble{background:linear-gradient(135deg,var(--visa),#0F62FE);color:#fff;border-radius:14px 14px 4px 14px;padding:9px 12px;font-size:12px;line-height:1.45;max-width:88%;box-shadow:0 2px 6px rgba(26,86,219,.2);}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.chat-suggestions{display:flex;flex-direction:column;gap:5px;padding-left:32px;margin-top:-2px;}
+.sug-chip{padding:8px 11px;background:#fff;border:1px solid var(--border);border-radius:14px;font-size:11px;color:var(--text2);line-height:1.35;cursor:pointer;transition:all .15s;font-family:inherit;text-align:left;display:flex;align-items:center;gap:7px;}
+.sug-chip:hover{background:var(--visa-light);border-color:var(--visa);color:var(--visa);transform:translateX(2px);}
+.sug-chip strong{font-weight:700;font-size:11px;}
+.sug-chip .sug-arrow{margin-left:auto;color:var(--text4);font-size:13px;}
+.sug-chip:hover .sug-arrow{color:var(--visa);}
+.chat-question{padding:8px 11px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:11px;color:var(--text2);line-height:1.4;cursor:pointer;transition:all .15s;font-family:inherit;text-align:left;display:flex;gap:8px;align-items:flex-start;}
+.chat-question:hover{background:var(--visa-light);border-color:var(--visa);color:var(--visa);}
+.chat-question .cq-icon{font-size:13px;margin-top:1px;flex-shrink:0;}
+.chat-question strong{display:block;font-weight:700;font-size:10px;color:var(--text3);margin-bottom:2px;letter-spacing:.2px;}
+.chat-question:hover strong{color:var(--visa);}
+.chat-back-btn{align-self:flex-start;margin-left:32px;font-size:10px;font-weight:600;color:var(--visa);background:none;border:none;cursor:pointer;padding:2px 0;font-family:inherit;display:inline-flex;align-items:center;gap:4px;}
+.chat-back-btn:hover{text-decoration:underline;}
+.chat-composer{padding:12px 14px;border-top:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:8px;}
+.composer-personas{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.composer-personas-label{font-size:9px;font-weight:700;color:var(--text4);letter-spacing:.6px;text-transform:uppercase;margin-right:3px;}
+.composer-row{position:relative;}
+.composer-input{width:100%;border:1.5px solid var(--border2);border-radius:20px;padding:10px 42px 10px 14px;font-size:12px;background:#fff;font-family:inherit;color:var(--text1);outline:none;transition:border-color .15s,box-shadow .15s;}
+.composer-input:focus{border-color:var(--visa);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+.composer-input::placeholder{color:var(--text4);}
+.composer-send{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:var(--visa);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.composer-send:hover{background:#1240B0;transform:translateY(-50%) scale(1.06);}
+.composer-intent{display:inline-flex;align-items:center;gap:5px;background:#1E293B;color:#94A3B8;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:3px 9px;border-radius:20px;font-family:'IBM Plex Mono',monospace;align-self:flex-start;}
+.persona-focus-bar{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#1E293B,#0F172A);border-radius:var(--r8);padding:10px 13px;margin-bottom:2px;}
+.pfb-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;}
+.pfb-name{font-size:12px;font-weight:700;color:#F1F5F9;}
+.pfb-sub{font-size:10px;color:#94A3B8;margin-top:1px;}
+.pfb-clear{margin-left:auto;background:rgba(255,255,255,.1);border:none;color:#94A3B8;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.pfb-clear:hover{background:rgba(255,255,255,.2);color:#fff;}
+.sidebar-foot{padding:10px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.ibm-box2{background:#0F62FE;color:#fff;font-size:8px;font-weight:800;padding:2px 4px;border-radius:2px;letter-spacing:.5px;}
+.ibm-foot-text{font-size:10px;color:var(--text4);}
+
+/* ── MAIN ─────────────────────────────────────────── */
+.main{flex:1;overflow-y:auto;padding:18px 18px 18px;display:flex;flex-direction:column;gap:12px;min-width:0;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:transparent;}
+.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px;}
+.insight-bar{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.insight-badge{display:inline-flex;align-items:center;gap:6px;background:var(--visa-light);border:1.5px solid var(--visa-mid);color:var(--visa);font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:.5px;}
+.new-q-btn{display:flex;align-items:center;gap:5px;background:#fff;border:1.5px solid var(--border2);color:var(--text2);font-size:12px;font-weight:500;padding:6px 13px;border-radius:var(--r8);cursor:pointer;transition:all .15s;font-family:inherit;}
+.new-q-btn:hover{border-color:var(--visa);color:var(--visa);background:var(--visa-light);}
+.q-display{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:11px 15px;font-size:12px;color:var(--text3);display:flex;align-items:flex-start;gap:8px;}
+.q-icon{color:var(--visa);font-size:13px;flex-shrink:0;margin-top:1px;}
+.q-text{font-style:italic;flex:1;line-height:1.5;}
+.headline-card{position:relative;background:linear-gradient(135deg,#ffffff 0%,#F5F8FF 60%,#EEF2FF 100%);border:1px solid var(--visa-mid)!important;border-radius:var(--r16);padding:22px 24px 18px;box-shadow:0 4px 18px rgba(26,86,219,.07);display:flex;align-items:flex-start;justify-content:space-between;gap:20px;}
+.headline-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r16) var(--r16) 0 0;background:linear-gradient(90deg,#1A56DB 0%,#7C3AED 50%,#10B981 100%);pointer-events:none;}
+.headline-main{flex:1;min-width:0;}
+.headline-label{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--visa);letter-spacing:1.3px;text-transform:uppercase;margin-bottom:11px;background:rgba(26,86,219,.08);padding:4px 10px;border-radius:20px;}
+.headline-text{font-size:20px;font-weight:300;color:var(--text1);line-height:1.45;letter-spacing:-.15px;}
+.headline-text .hl{font-weight:800;color:var(--visa);}
+.headline-text .hl-green{font-weight:800;color:var(--green);}
+.headline-conf{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;background:rgba(255,255,255,.65);border:1px solid var(--border);border-radius:var(--r12);padding:10px 14px 12px;min-width:120px;backdrop-filter:blur(4px);}
+.conf-lbl{font-size:9px;font-weight:700;color:var(--text4);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;}
+.conf-badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.3px;margin-top:3px;}
+.conf-desc{font-size:9.5px;color:var(--text3);text-align:center;max-width:110px;line-height:1.4;margin-top:4px;}
+.meta-bar{display:flex;align-items:center;gap:7px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(0,0,0,.06);flex-wrap:wrap;}
+.meta-chip{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--text3);background:#fff;border:1px solid var(--border);padding:4px 9px;border-radius:20px;transition:border-color .15s;}
+.meta-chip:hover{border-color:var(--visa-mid);}
+.meta-chip strong{color:var(--text1);font-weight:700;}
+.meta-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.sec-title{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.6px;text-transform:uppercase;}
+.sec-meta{font-size:11px;color:var(--text4);}
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.why-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--visa)!important;border-radius:var(--r12);padding:14px;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;}
+.why-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(26,86,219,.08)!important;}
+.why-icon{font-size:18px;margin-bottom:6px;}
+.why-title{font-size:12px;font-weight:700;color:var(--text1);margin-bottom:4px;line-height:1.35;}
+.why-body{font-size:11px;color:var(--text3);line-height:1.55;}
+.carousel-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px;}
+.carousel-track::-webkit-scrollbar{height:0;}
+.scenario-card{min-width:180px;flex:1;flex-shrink:0;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r12);padding:14px;scroll-snap-align:start;transition:all .2s;cursor:pointer;}
+.scenario-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+.scenario-card.optimal{border-color:var(--visa);background:linear-gradient(160deg,#EFF6FF,#F5F9FF);box-shadow:0 4px 16px rgba(26,86,219,.1);animation:glow 3s ease-in-out infinite;}
+.scenario-card.selected{border-color:var(--green)!important;box-shadow:0 4px 16px rgba(5,150,105,.12)!important;}
+.scenario-card.selected .sc-price{color:var(--green)!important;}
+.sc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.sc-price{font-size:20px;font-weight:800;color:var(--text1);}
+.scenario-card.optimal .sc-price{color:var(--visa);}
+.sc-tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.sc-tag.opt{background:var(--visa-light);color:var(--visa);border:1px solid var(--visa-mid);}
+.sc-tag.std{background:#F3F4F6;color:var(--text3);}
+.sc-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.sc-key{font-size:11px;color:var(--text3);}
+.sc-val{font-size:12px;font-weight:700;color:var(--text1);}
+.scenario-card.optimal .sc-val{color:var(--visa);}
+.sc-bar{height:4px;border-radius:2px;background:#E5E7EB;margin-bottom:7px;}
+.sc-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
+.sc-conf{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-top:2px;}
+.sc-conf.high{background:var(--green-bg);color:var(--green);}
+.sc-conf.med{background:var(--amber-bg);color:var(--amber);}
+.persona-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;}
+.persona-scroll::-webkit-scrollbar{height:0;}
+.persona-card{min-width:145px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:12px;transition:all .2s;cursor:pointer;position:relative;}
+.persona-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--visa)!important;}
+.persona-card::after{content:'↗';position:absolute;top:10px;right:10px;font-size:10px;color:var(--text4);opacity:0;transition:opacity .2s;}
+.persona-card:hover::after{opacity:1;}
+.p-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;}
+.p-name{font-size:12px;font-weight:700;color:var(--text1);margin-bottom:1px;}
+.p-meta{font-size:10px;color:var(--text3);margin-bottom:5px;}
+.p-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;margin-bottom:7px;}
+.p-maxlabel{font-size:10px;color:var(--text3);margin-bottom:5px;}
+.p-maxlabel span{font-weight:700;color:var(--text1);}
+.dots-wrap{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:7px;}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot.on{background:var(--visa);}
+.dot.off{background:#E5E7EB;}
+.p-quote{font-size:9.5px;color:var(--text4);font-style:italic;line-height:1.45;padding-top:7px;border-top:1px solid var(--border);}
+.eval-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.eval-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:13px;box-shadow:var(--shadow);text-align:center;transition:transform .2s,box-shadow .2s;}
+.eval-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(26,86,219,.1)!important;}
+.eval-gauge{display:flex;justify-content:center;margin-bottom:6px;}
+.eval-label{font-size:12px;font-weight:700;color:var(--text1);margin-bottom:3px;}
+.eval-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:5px;}
+.eval-badge.green{background:var(--green-bg);color:var(--green);}
+.eval-badge.amber{background:var(--amber-bg);color:var(--amber);}
+.eval-desc{font-size:10px;color:var(--text3);line-height:1.45;}
+.hitl-bar{background:var(--surface);border:1.5px solid #FDE68A;border-radius:var(--r12);padding:13px 17px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;}
+.hitl-bar.approved{background:var(--green-bg);border-color:var(--green-light);}
+.hitl-bar.approved .hitl-head{color:var(--green);}
+.hitl-icon{font-size:19px;flex-shrink:0;}
+.hitl-text{flex:1;}
+.hitl-head{font-size:13px;font-weight:700;color:var(--text1);}
+.hitl-sub{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4;}
+.hitl-actions{display:flex;gap:8px;flex-shrink:0;}
+.btn-approve{padding:8px 14px;border-radius:var(--r8);border:none;cursor:pointer;background:var(--green);color:#fff;font-size:12px;font-weight:700;font-family:inherit;transition:background .15s;}
+.btn-approve:hover{background:#047857;}
+.btn-revise{padding:8px 12px;border-radius:var(--r8);cursor:pointer;background:#fff;color:var(--text2);font-size:12px;font-weight:600;border:1.5px solid var(--border2);font-family:inherit;transition:all .15s;}
+.btn-revise:hover{border-color:var(--amber);color:var(--amber);}
+.ev-wrap{display:flex;gap:7px;flex-wrap:wrap;}
+.ev-pill{display:flex;align-items:center;gap:5px;background:#F8F9FB;border:1px solid var(--border);border-radius:var(--r8);padding:5px 9px;font-size:11px;color:var(--text2);}
+.ev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.pipeline-trace{background:#0D1117;border-radius:var(--r8);padding:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#58A6FF;line-height:1.9;overflow:hidden;}
+.pt-line{display:flex;align-items:center;gap:8px;}
+.pt-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.risk-flag{display:flex;align-items:flex-start;gap:8px;background:var(--amber-bg);border:1px solid var(--amber-light);border-radius:var(--r8);padding:9px 11px;}
+.risk-icon{font-size:13px;flex-shrink:0;margin-top:1px;}
+.risk-text{font-size:11px;color:var(--amber);font-weight:500;line-height:1.45;}
+.welcome-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:40px;min-height:300px;}
+.welcome-icon{font-size:44px;opacity:.35;}
+.welcome-h{font-size:18px;font-weight:600;color:var(--text2);}
+.welcome-p{font-size:13px;color:var(--text4);max-width:300px;line-height:1.65;}
+.loader-ring{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--visa);border-radius:50%;animation:spin .85s linear infinite;}
+.loader-step{font-size:11px;color:var(--text4);opacity:0;transition:opacity .3s;}
+.loader-step.active{opacity:1;color:var(--visa);font-weight:600;}
+
+/* ── RIGHT PANEL ─────────────────────────────────────────── */
+.right-panel{width:var(--right-w);flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;height:100%;overflow:hidden;}
+.rp-tabs-wrap{flex:1;overflow-y:auto;padding:13px 11px;}
+.rp-tabs-wrap::-webkit-scrollbar{width:0;}
+.rp-tab-head{font-size:9px;font-weight:700;color:var(--text4);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.rp-tab-item{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:var(--r8);font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s;margin-bottom:2px;font-weight:500;}
+.rp-tab-item:hover{background:var(--visa-light);color:var(--visa);}
+.rp-tab-item.active{background:var(--visa-light);color:var(--visa);font-weight:700;}
+.rp-tab-item.active::before{content:'';display:block;width:3px;height:14px;background:var(--visa);border-radius:2px;flex-shrink:0;}
+.rp-tab-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
+.rec-card{margin:9px 11px;border-radius:var(--r12);overflow:hidden;border:1px solid var(--visa-mid);box-shadow:0 4px 14px rgba(26,86,219,.1);}
+.rec-card-head{background:linear-gradient(135deg,var(--visa),#1240B0);padding:12px;color:#fff;}
+.rec-card-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.75;margin-bottom:3px;}
+.rec-card-title{font-size:12px;font-weight:700;line-height:1.4;}
+.rec-card-body{background:#fff;padding:10px 12px;}
+.rec-item{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:var(--text2);line-height:1.45;padding:3px 0;border-bottom:1px solid #F3F4F6;}
+.rec-item:last-child{border-bottom:none;}
+.rec-check{color:var(--green);flex-shrink:0;font-size:12px;margin-top:1px;}
+.rec-tier{margin:7px 11px;padding:7px 10px;background:var(--green-bg);border:1px solid var(--green-light);border-radius:var(--r8);display:flex;align-items:center;gap:8px;}
+.tier-badge{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tier-text{font-size:10px;color:var(--green);font-weight:600;line-height:1.4;}
+.visa-card-visual{margin:7px 11px 11px;border-radius:11px;background:linear-gradient(135deg,#1240B0,#0A2570);padding:12px;height:70px;position:relative;overflow:hidden;}
+.vc-chip{width:26px;height:18px;border-radius:3px;background:linear-gradient(135deg,#FFD700,#FFA500);position:absolute;top:9px;left:11px;}
+.vc-net{position:absolute;right:9px;top:8px;display:flex;}
+.vc-circle{width:18px;height:18px;border-radius:50%;opacity:.85;}
+.vc-c1{background:#FF6B35;}
+.vc-c2{background:#FFBA08;margin-left:-7px;}
+.vc-txt{position:absolute;bottom:8px;right:11px;color:rgba(255,255,255,.75);font-size:9px;font-weight:800;letter-spacing:2px;font-style:italic;}
+.vc-num{position:absolute;bottom:22px;left:11px;color:rgba(255,255,255,.4);font-size:8px;letter-spacing:.8px;}
+.rp-ts{padding:8px 11px;border-top:1px solid var(--border);font-size:10px;color:var(--text4);}
+
+/* ── GOV FOOTER ─────────────────────────────────────────── */
+.gov-footer{height:36px;background:var(--surface);border-top:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:12px;position:fixed;bottom:0;left:0;right:0;z-index:200;}
+.gov-pill{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--text3);padding:3px 9px;border:1px solid var(--border);border-radius:20px;}
+.gp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.gov-timestamp{margin-left:auto;font-size:10px;color:var(--text4);}
+
+/* ── HITL MODAL ─────────────────────────────────────────── */
+.hitl-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.hitl-modal{background:#fff;border-radius:var(--r16);width:500px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;}
+.hitl-modal-head{background:linear-gradient(135deg,#1A1A1A,#2D2D2D);padding:17px 21px;color:#fff;display:flex;align-items:center;gap:10px;}
+.hitl-modal-head h3{font-size:14px;font-weight:700;}
+.hitl-modal-body{padding:20px;}
+.hitl-modal-body p{font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;}
+.hitl-preview{background:#F8F9FB;border:1px solid var(--border);border-radius:var(--r8);padding:12px;margin-bottom:14px;}
+.hitl-preview-label{font-size:9px;font-weight:700;color:var(--text4);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;}
+.hitl-preview-text{font-size:12px;color:var(--text1);line-height:1.5;}
+.hitl-notes{width:100%;border:1.5px solid var(--border2);border-radius:var(--r8);padding:9px;font-family:inherit;font-size:12px;resize:vertical;min-height:65px;outline:none;color:var(--text1);}
+.hitl-notes:focus{border-color:var(--visa);}
+.hitl-modal-foot{padding:13px 21px;background:#F9FAFB;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.btn-primary{padding:9px 17px;border-radius:var(--r8);border:none;cursor:pointer;background:var(--visa);color:#fff;font-size:12px;font-weight:700;font-family:inherit;transition:background .15s;}
+.btn-primary:hover{background:#1240B0;}
+.btn-secondary{padding:9px 13px;border-radius:var(--r8);cursor:pointer;background:#fff;border:1.5px solid var(--border2);color:var(--text2);font-size:12px;font-weight:600;font-family:inherit;transition:all .15s;}
+.btn-secondary:hover{border-color:var(--red);color:var(--red);}
+.s-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;}
+.s-pending{background:var(--amber-bg);color:var(--amber);}
+.s-approved{background:var(--green-bg);color:var(--green);}
+
+/* ── PERSONA PANEL ─────────────────────────────────────────── */
+.persona-panel-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:400;backdrop-filter:blur(2px);display:flex;align-items:stretch;justify-content:flex-end;}
+.persona-panel{width:380px;background:#fff;height:100%;overflow-y:auto;box-shadow:-8px 0 40px rgba(0,0,0,.12);animation:slideInRight .3s cubic-bezier(.22,1,.36,1) both;display:flex;flex-direction:column;}
+.pp-head{padding:18px 18px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:1;}
+.pp-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;margin-bottom:11px;}
+.pp-name{font-size:17px;font-weight:700;color:var(--text1);margin-bottom:2px;}
+.pp-sub{font-size:12px;color:var(--text3);}
+.pp-close{position:absolute;top:15px;right:15px;width:28px;height:28px;border-radius:50%;background:#F3F4F6;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text3);transition:background .15s;}
+.pp-close:hover{background:#E5E7EB;}
+.pp-body{padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:13px;}
+.pp-section{font-size:10px;font-weight:700;color:var(--text4);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.pp-stat{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F3F4F6;}
+.pp-stat:last-child{border-bottom:none;}
+.pp-stat-label{font-size:12px;color:var(--text3);}
+.pp-stat-value{font-size:13px;font-weight:700;color:var(--text1);}
+.pp-quote-box{background:var(--visa-light);border:1px solid var(--visa-mid);border-radius:var(--r8);padding:12px;font-size:12px;font-style:italic;color:var(--text2);line-height:1.55;}
+.pp-chip{display:inline-block;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;margin:2px;}
+.pp-adoption-bar{height:6px;border-radius:3px;background:#E5E7EB;margin-top:4px;}
+.pp-adoption-fill{height:100%;border-radius:3px;background:var(--visa);transition:width 1s cubic-bezier(.22,1,.36,1);}
+.pp-q-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #F3F4F6;font-size:11px;color:var(--text2);line-height:1.45;cursor:pointer;}
+.pp-q-item:last-child{border-bottom:none;}
+.pp-q-item:hover{color:var(--visa);}
+.pp-q-icon{flex-shrink:0;font-size:13px;}
+
+/* ── LANGFUSE EVALUATION ─────────────────────────────────────────── */
+.lf-header{display:flex;align-items:center;gap:10px;padding:13px 16px;background:linear-gradient(135deg,#1E1B4B,#312E81);border-radius:var(--r12);margin-bottom:12px;}
+.lf-logo{font-size:11px;font-weight:800;color:#A5B4FC;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;}
+.lf-connected{display:flex;align-items:center;gap:4px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.35);color:#6EE7B7;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;}
+.lf-trace-id{font-size:10px;color:#94A3B8;font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+.lf-meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.lf-meta-pill{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#CBD5E1;font-size:9px;font-weight:600;padding:2px 8px;border-radius:20px;}
+.lf-score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.lf-score-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:12px;text-align:center;box-shadow:var(--shadow);}
+.lf-score-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.5px;margin-bottom:6px;}
+.lf-score-val{font-size:22px;font-weight:800;color:var(--text1);line-height:1;}
+.lf-score-unit{font-size:11px;font-weight:500;color:var(--text4);}
+.lf-score-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:5px;}
+.lf-trace-table{width:100%;border-collapse:collapse;font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);overflow:hidden;}
+.lf-trace-table th{background:#F8F9FB;border-bottom:1px solid var(--border);padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;}
+.lf-trace-table td{padding:9px 12px;border-bottom:1px solid #F9FAFB;color:var(--text2);vertical-align:top;}
+.lf-trace-table tr:last-child td{border-bottom:none;}
+.lf-trace-table tr:hover td{background:#FAFBFF;}
+.lf-token-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+.lf-token-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);padding:11px 13px;}
+.lf-token-label{font-size:10px;color:var(--text4);margin-bottom:3px;}
+.lf-token-val{font-size:17px;font-weight:800;color:var(--text1);}
+.lf-token-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.lf-open-btn{display:flex;align-items:center;gap:5px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);color:#6366F1;font-size:11px;font-weight:700;padding:5px 12px;border-radius:var(--r8);cursor:pointer;font-family:inherit;transition:all .2s;}
+.lf-open-btn:hover{background:rgba(99,102,241,.18);}
+.lf-section-title{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin:12px 0 7px;}
+
+/* ── UTILITIES ─────────────────────────────────────────── */
+.hidden{display:none!important;}
+.sec-wrap{display:flex;flex-direction:column;gap:8px;}
+.skeleton{background:linear-gradient(90deg,#F3F4F6 25%,#E9EAED 50%,#F3F4F6 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(26,86,219,0)}50%{box-shadow:0 0 0 6px rgba(26,86,219,.12)}}
+@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.fade-in{animation:fadeIn .4s ease both;}
+.sec-stagger-1{animation:slideUp .45s cubic-bezier(.22,1,.36,1) both .05s;}
+.sec-stagger-2{animation:slideUp .45s cubic-bezier(.22,1,.36,1) both .12s;}
+.sec-stagger-3{animation:slideUp .45s cubic-bezier(.22,1,.36,1) both .20s;}
+.sec-stagger-4{animation:slideUp .45s cubic-bezier(.22,1,.36,1) both .28s;}
+.sec-stagger-5{animation:slideUp .45s cubic-bezier(.22,1,.36,1) both .36s;}
+.sec-stagger-6{animation:slideUp .45s cubic-bezier(.22,1,.36,1) both .44s;}
+.sec-stagger-7{animation:slideUp .45s cubic-bezier(.22,1,.36,1) both .52s;}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="nav-visa">VISA</div>
+  <div class="nav-div"></div>
+  <div class="nav-ibm"><span class="ibm-chip">IBM</span><span>watsonx Orchestrate</span></div>
+  <div class="nav-right">
+    <span class="nav-governed">Governed</span>
+    <span class="nav-agents">9 Agents · Live</span>
+    <div class="dl-group" id="dl-btn">
+      <span class="dl-label">⬇ Export</span>
+      <button class="dl-fmt" onclick="downloadInsight('pdf')" title="Download as formatted PDF report">📄 PDF</button>
+      <button class="dl-fmt" onclick="downloadInsight('xlsx')" title="Download as multi-sheet Excel workbook">📊 Excel</button>
+    </div>
+    <div class="avatar" title="Analyst Mode">AM</div>
+  </div>
+</nav>
+
+<div class="shell">
+
+  <!-- ════ LEFT SIDEBAR (CHATBOT) ════ -->
+  <aside class="sidebar">
+    <div class="chat-header">
+      <div class="chat-avatar">✦</div>
+      <div>
+        <div class="chat-title">Visa Research Assistant</div>
+        <div class="chat-sub">9 agents online · watsonx</div>
+      </div>
+    </div>
+
+    <div class="chat-stream" id="chat-stream"></div>
+
+    <div class="chat-composer">
+      <div class="composer-personas">
+        <span class="composer-personas-label">Focus:</span>
+        <button class="pf-all active" id="pf-all" onclick="selectPersonaFilter(null)">All</button>
+        <div class="pf-avatar" style="background:#EF4444;width:26px;height:26px;font-size:10px;" title="felix" onclick="selectPersonaFilter('felix')">F</div>
+        <div class="pf-avatar" style="background:#F59E0B;width:26px;height:26px;font-size:10px;" title="lukas" onclick="selectPersonaFilter('lukas')">L</div>
+        <div class="pf-avatar" style="background:#10B981;width:26px;height:26px;font-size:10px;" title="anna"  onclick="selectPersonaFilter('anna')">A</div>
+        <div class="pf-avatar" style="background:#1A56DB;width:26px;height:26px;font-size:10px;" title="sandra" onclick="selectPersonaFilter('sandra')">S</div>
+        <div class="pf-avatar" style="background:#9CA3AF;width:26px;height:26px;font-size:10px;" title="peter" onclick="selectPersonaFilter('peter')">P</div>
+      </div>
+      <div id="intent-display" style="display:none"><span class="composer-intent" id="intent-badge"></span></div>
+      <div class="composer-row">
+        <input class="composer-input" id="q-input" type="text" placeholder="Type your research question…"/>
+        <button class="composer-send" id="run-btn" onclick="submitChatQuery()" title="Send">→</button>
+      </div>
+    </div>
+
+    <div class="sidebar-foot">
+      <span class="ibm-box2">IBM</span>
+      <span class="ibm-foot-text">Group 29 · watsonx Agentic AI · 2026</span>
+    </div>
+  </aside>
+
+  <!-- ════ MAIN ════ -->
+  <div class="main" id="content-area">
+    <div class="welcome-state">
+      <div class="welcome-icon">✦</div>
+      <div class="welcome-h">Ask a market question</div>
+      <div class="welcome-p">Type your question or pick one from the library to get decision-ready insights powered by 5 synthetic Swiss consumer personas.</div>
+    </div>
+  </div>
+
+  <!-- ════ RIGHT PANEL ════ -->
+  <aside class="right-panel">
+    <div class="rp-tabs-wrap">
+      <div class="rp-tab-head">Navigation</div>
+      <div id="rp-tabs-list"></div>
+    </div>
+    <div id="rp-rec-card"></div>
+    <div class="rp-ts" id="rp-ts"></div>
+  </aside>
+
+</div>
+
+<!-- GOV FOOTER -->
+<div class="gov-footer">
+  <div class="gov-pill"><div class="gp-dot" style="background:#10B981"></div>9 Agents Running</div>
+  <div class="gov-pill"><div class="gp-dot" style="background:#1A56DB"></div>WatsonX Governed</div>
+  <div class="gov-pill"><div class="gp-dot" style="background:#7C3AED"></div>Langfuse Monitored</div>
+  <div class="gov-pill"><div class="gp-dot" style="background:#F59E0B"></div>HITL Active</div>
+  <div class="gov-timestamp" id="gov-ts"></div>
+</div>
+
+<!-- HITL MODAL -->
+<div class="hitl-modal-bg hidden" id="hitl-modal">
+  <div class="hitl-modal">
+    <div class="hitl-modal-head"><span style="font-size:18px">🔍</span><h3>Human Review — Approve or Revise Insight</h3></div>
+    <div class="hitl-modal-body">
+      <p>You are reviewing an AI-generated insight before it is logged to Langfuse and made available for downstream actions. Please approve if accurate, or provide revision notes.</p>
+      <div class="hitl-preview"><div class="hitl-preview-label">Insight Preview</div><div class="hitl-preview-text" id="hitl-preview-text"></div></div>
+      <textarea class="hitl-notes" id="hitl-notes" placeholder="Optional revision notes…"></textarea>
+    </div>
+    <div class="hitl-modal-foot">
+      <span class="s-chip s-pending" id="hitl-status-chip">⏳ Pending Review</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" onclick="closeHITL()">Cancel</button>
+        <button class="btn-primary" onclick="approveHITL()">✓ Approve & Log</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PERSONA PANEL -->
+<div class="persona-panel-bg hidden" id="persona-panel-bg" onclick="closePersonaPanel(event)">
+  <div class="persona-panel" id="persona-panel">
+    <div class="pp-head">
+      <div class="pp-avatar" id="pp-avatar"></div>
+      <div class="pp-name" id="pp-name"></div>
+      <div class="pp-sub" id="pp-sub"></div>
+      <button class="pp-close" onclick="closePersonaPanel()">×</button>
+    </div>
+    <div class="pp-body" id="pp-body"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   PERSONA DATA — 10 questions each
+═══════════════════════════════════════════════════════ */
+const PERSONA_DATA = {
+  felix:{
+    key:'felix',initial:'F',display_name:'Felix Müller',age:22,segment:'Student',
+    avatar_bg:'#EF4444',badge:'Price Sensitive',badge_color:'#DC2626',badge_bg:'#FEF2F2',
+    wtp:3.5,max_price:'CHF 5',twint_switch:12,
+    key_driver:'Peer social proof and zero-fee products only',
+    key_concern:'Any monthly fee above CHF 5 triggers immediate rejection',
+    quote:'"Eight francs a month? That\'s CHF 96 a year. There\'s definitely a free option somewhere."',
+    population_pct:8, income:'CHF 800–2,000/mo', city:'Bern',
+    adoption_curve:[
+      {price:0,label:'Free',adoption:91,highlight:true,tag:'✦ Converts'},
+      {price:3,label:'CHF 3',adoption:74,highlight:false,tag:'Viable'},
+      {price:5,label:'CHF 5',adoption:52,highlight:false,tag:'Ceiling'},
+      {price:8,label:'CHF 8',adoption:14,highlight:false,tag:'Rejects'},
+      {price:12,label:'CHF 12',adoption:3,highlight:false,tag:'Hard no'},
+    ],
+    questions:[
+      {key:'felix_free',     icon:'🎓',label:'Free tier',        text:"Would Felix adopt Visa if there's a verified student tier at CHF 0/month?"},
+      {key:'felix_social',   icon:'👥',label:'Social proof',     text:'What peer incentive would get Felix to recommend Visa to 3+ university friends?'},
+      {key:'felix_ceiling',  icon:'💸',label:'Price ceiling',    text:"What is Felix's absolute maximum monthly fee — and what changes that ceiling?"},
+      {key:'felix_twint',    icon:'📱',label:'Twint rivalry',    text:"What single feature would pull Felix away from Twint's free P2P payments?"},
+      {key:'felix_trial',    icon:'🆓',label:'Trial conversion', text:'Would a 30-day free trial convert Felix from initial fee rejection?'},
+      {key:'felix_cashback', icon:'💰',label:'Cashback UX',      text:'How does real-time in-app cashback visibility change Felix\'s monthly fee calculation?'},
+      {key:'felix_perks',    icon:'🎟',label:'Student perks',    text:'What student-specific discounts (SBB Halbtax, Spotify) make CHF 5/month feel worth it?'},
+      {key:'felix_peer_grp', icon:'🏠',label:'WG adoption',      text:'If all 4 of Felix\'s flatmates switched to Visa, how likely is he to follow?'},
+      {key:'felix_annual',   icon:'📆',label:'Annual framing',   text:'Felix calculates CHF 8/month = CHF 96/year. What reframing changes his decision?'},
+      {key:'felix_math',     icon:'🧮',label:'Cashback math',    text:'Felix spends CHF 350/month on groceries. At what cashback rate does CHF 5/month pay for itself?'},
+    ],
+    rec_headline:'Launch free or CHF 3/month student tier verified by university email',
+    rec_items:[
+      'Free tier with .ch student email verification — Felix rejects on price, not product',
+      'Peer referral: both Felix + referral earn CHF 10 Twint credit on activation',
+      'Show cashback in CHF amounts in-app, never as % — instant gratification loop',
+    ],
+    why_cards:[
+      {icon:'🎓',title:'CHF 5 is a principled ceiling, not a preference',body:'Felix\'s hard limit is CHF 5/month — grounded in annual cost awareness (CHF 60+/year). 88% of student-segment responses show immediate rejection above this threshold regardless of stated benefits.'},
+      {icon:'👥',title:'Peer proof overrides price resistance',body:'If 3+ university peers use a product, 62% of price-sensitive students try it despite the fee. Social proof via group chats and Instagram is the highest-converting student acquisition channel.'},
+      {icon:'📱',title:'Free trial converts 41% of initial rejectors',body:'A 30-day free trial converts 41% of students who initially reject CHF 5. Post-trial, real-time cashback visibility drives ~65% retention. The product must earn its fee after the trial, every month.'},
+    ],
+  },
+  lukas:{
+    key:'lukas',initial:'L',display_name:'Lukas Weber',age:32,segment:'Professional',
+    avatar_bg:'#F59E0B',badge:'Value Driven',badge_color:'#D97706',badge_bg:'#FFFBEB',
+    wtp:9.5,max_price:'CHF 25',twint_switch:58,
+    key_driver:'Real-time cashback + zero FX fees — value must be visible & immediate',
+    key_concern:'Abstract premium positioning without concrete CHF savings data',
+    quote:'"CHF 8 is fine if the cashback is real and visible in the app same day."',
+    population_pct:12, income:'CHF 8,500–11,200/mo', city:'Zürich',
+    adoption_curve:[
+      {price:5, label:'CHF 5', adoption:85,highlight:false,tag:'Solid'},
+      {price:8, label:'CHF 8', adoption:78,highlight:true, tag:'✦ Sweet spot'},
+      {price:10,label:'CHF 10',adoption:71,highlight:false,tag:'Acceptable'},
+      {price:12,label:'CHF 12',adoption:62,highlight:false,tag:'Stretching'},
+      {price:15,label:'CHF 15',adoption:38,highlight:false,tag:'Too much'},
+    ],
+    questions:[
+      {key:'lukas_roi',      icon:'💰',label:'ROI case',         text:'What concrete CHF savings case makes Lukas pay CHF 8–10 per month without hesitation?'},
+      {key:'lukas_travel',   icon:'✈️',label:'Travel tier',      text:'Would zero FX fees + airport lounge justify CHF 12/month for Lukas given 10 trips/year?'},
+      {key:'lukas_cashback', icon:'📊',label:'Cashback data',    text:'How does real-time in-app cashback visibility change Lukas\'s adoption decision?'},
+      {key:'lukas_premium',  icon:'💎',label:'Premium tier',     text:'What must a CHF 12 Visa premium card include to win Lukas from his current card?'},
+      {key:'lukas_applepay', icon:'📱',label:'Apple Pay',        text:'How critical is instant Apple Pay integration for Lukas\'s day-to-day spending flow?'},
+      {key:'lukas_expense',  icon:'🧾',label:'Expense export',   text:'Would business expense CSV/PDF export push Lukas from CHF 8 to CHF 12/month?'},
+      {key:'lukas_frame',    icon:'📈',label:'Savings framing',  text:'Does Lukas prefer "earn CHF 120/year" vs "pay CHF 10/month" — and by how much?'},
+      {key:'lukas_compete',  icon:'⚔️',label:'Competitor gap',   text:'How does Lukas compare Visa\'s value vs his current Migros Bank or Cembura card?'},
+      {key:'lukas_upgrade',  icon:'⬆️',label:'Upgrade path',     text:'Would Lukas start at CHF 8 and upgrade to CHF 12 after 6 months of proven value?'},
+      {key:'lukas_fx_calc',  icon:'🌍',label:'FX calculation',   text:'With 10 international trips/year, what\'s Lukas\'s break-even on zero FX fees vs CHF 10/month?'},
+    ],
+    rec_headline:"Position Visa as the professional's high-ROI card — CHF 8 with visible savings dashboard",
+    rec_items:[
+      'In-app savings tracker: "You\'ve earned CHF X this month" shown on home screen daily',
+      'Zero FX fees framed as "save CHF 200–400/year" — annual savings more compelling than %',
+      'Business expense export (CSV/PDF) for client dinners — unlocks CHF 12 tier adoption',
+    ],
+    why_cards:[
+      {icon:'📱',title:'Visibility of return is the product',body:'Lukas judges every subscription on "what did I get this month?" Real-time in-app cashback (visible within 24h) shifts his satisfaction from neutral to strongly positive. A delayed rewards programme scores 42% lower.'},
+      {icon:'✈️',title:'FX savings make the card self-funding',body:'Lukas travels internationally 8–12× per year. Zero FX fees save CHF 200–400/year — making CHF 8/month self-funding within 2 months of international use. Frame this explicitly in onboarding.'},
+      {icon:'💼',title:'Professional utility unlocks CHF 10–12 tier',body:'Expense reporting, VAT receipts, and business lounge access push Lukas\'s WTP to CHF 12 if bundled correctly. The switch from "consumer card" to "professional tool" reframes the fee as a business cost.'},
+    ],
+  },
+  anna:{
+    key:'anna',initial:'A',display_name:'Anna Meier',age:36,segment:'Mittelstand',
+    avatar_bg:'#10B981',badge:'Practical',badge_color:'#059669',badge_bg:'#ECFDF5',
+    wtp:10.0,max_price:'CHF 12',twint_switch:45,
+    key_driver:'Cashback ROI at Migros & Coop — fee must pay for itself within 2 months',
+    key_concern:'Monthly cost with no clear net return — wants to verify value before committing',
+    quote:'"CHF 8 is reasonable if the benefit is real. I\'d want a free trial month first."',
+    population_pct:28, income:'CHF 5,600/mo', city:'Winterthur',
+    adoption_curve:[
+      {price:5, label:'CHF 5', adoption:76,highlight:false,tag:'Good value'},
+      {price:8, label:'CHF 8', adoption:68,highlight:true, tag:'✦ Accepts'},
+      {price:10,label:'CHF 10',adoption:42,highlight:false,tag:'Hesitates'},
+      {price:12,label:'CHF 12',adoption:24,highlight:false,tag:'Rejects'},
+    ],
+    questions:[
+      {key:'anna_roi',       icon:'🛒',label:'Household ROI',    text:'What cashback structure at Migros & Coop makes Anna\'s CHF 8 fee net-positive per month?'},
+      {key:'anna_trial',     icon:'🆓',label:'Free trial',       text:'How critical is a free first month for converting hesitant family-segment shoppers?'},
+      {key:'anna_partner',   icon:'👪',label:'Partner card',     text:'Would a free secondary card for Anna\'s partner double her adoption probability?'},
+      {key:'anna_ebill',     icon:'📋',label:'eBill integration', text:'Does eBill integration and purchase protection on appliances matter to Anna?'},
+      {key:'anna_math',      icon:'🧮',label:'Grocery math',     text:'Anna spends CHF 900/month at Migros & Coop. At 2% cashback, does CHF 8/month compute?'},
+      {key:'anna_tracking',  icon:'📊',label:'Budget tracking',  text:'Would household budget tracking in-app increase Anna\'s perceived card value?'},
+      {key:'anna_annual',    icon:'📆',label:'Annual plan',      text:'Would CHF 80/year (vs CHF 8/month) improve Anna\'s sign-up conversion rate?'},
+      {key:'anna_peer',      icon:'👥',label:'Word of mouth',    text:'How much does a neighbour or school-parent recommendation affect Anna\'s adoption?'},
+      {key:'anna_insurance', icon:'🛡',label:'Purchase cover',   text:'Would purchase protection on school equipment and white goods change Anna\'s decision?'},
+      {key:'anna_joint',     icon:'🤝',label:'Joint decision',   text:'How does Anna\'s joint decision-making with her partner affect Visa adoption timing?'},
+    ],
+    rec_headline:"Lead with household ROI: 'Earn CHF 15+ back on Migros & Coop every month'",
+    rec_items:[
+      '"CHF X back this month" as the #1 home screen element — Anna evaluates by monthly net gain',
+      'Free secondary card for partner — doubles perceived household utility, same CHF 8 fee',
+      '30-day free trial mandatory — Anna\'s "show me it works" requirement before committing',
+    ],
+    why_cards:[
+      {icon:'🛒',title:'Grocery cashback logic is the unlock',body:'Anna evaluates the card as a household budget tool. Swiss families spend CHF 800–1,200/month on food retail (BFS 2023). At 2% cashback, that\'s CHF 16–24/month returned — clearly covering the CHF 8 fee.'},
+      {icon:'👪',title:'Household utility multiplies perceived value',body:'A free secondary card for her partner means both spouses earn cashback on their individual grocery runs. Anna perceives this as "CHF 8 for two cards" — 2× value at the same price.'},
+      {icon:'🆓',title:'Free trial is non-negotiable for this segment',body:'Anna\'s commitment style is "prove it first, then I\'ll pay." A 30-day free trial converts 64% of hesitant family-segment respondents who otherwise decline. Without it, ~38% fewer adopt.'},
+    ],
+  },
+  sandra:{
+    key:'sandra',initial:'S',display_name:'Sandra Keller',age:44,segment:'Family',
+    avatar_bg:'#1A56DB',badge:'Value-Smart',badge_color:'#1A56DB',badge_bg:'#EFF6FF',
+    wtp:8.0,max_price:'CHF 10',twint_switch:51,
+    key_driver:'Strong lifestyle perks + aesthetically excellent mobile app',
+    key_concern:'Generic supermarket cashback feels boring — needs identity-level perks',
+    quote:'"On the edge at CHF 8 — needs strong lifestyle perks, not just supermarket cashback."',
+    population_pct:22, income:'CHF 7,500–9,800/mo', city:'Basel',
+    adoption_curve:[
+      {price:5, label:'CHF 5', adoption:72,highlight:false,tag:'Good'},
+      {price:8, label:'CHF 8', adoption:62,highlight:true, tag:'✦ Borderline'},
+      {price:10,label:'CHF 10',adoption:44,highlight:false,tag:'Unlikely'},
+      {price:12,label:'CHF 12',adoption:28,highlight:false,tag:'Rejects'},
+    ],
+    questions:[
+      {key:'sandra_lifestyle',icon:'✨',label:'Lifestyle angle',  text:"What lifestyle perks pull Sandra Keller above the CHF 8 adoption threshold?"},
+      {key:'sandra_app',      icon:'📱',label:'App design',       text:"How much does app design and brand identity affect Sandra's card adoption decision?"},
+      {key:'sandra_twint',    icon:'⚡',label:'Twint coexist',    text:'Can Visa coexist with Twint in Sandra\'s daily urban payment flow?'},
+      {key:'sandra_social',   icon:'📸',label:'Social proof',     text:'Would a creator or peer endorsement accelerate Sandra\'s trial beyond a standard campaign?'},
+      {key:'sandra_aesthetics',icon:'🎨',label:'Card design',     text:'Does premium matte card design and custom colours influence Sandra\'s sign-up decision?'},
+      {key:'sandra_dining',   icon:'🍽',label:'Dining cashback',  text:'Would dining + Spotify + Zalando cashback beat supermarket cashback for Sandra?'},
+      {key:'sandra_referral', icon:'🎁',label:'Referral program', text:'Would a CHF 20 mutual referral reward trigger Sandra to actively recruit friends?'},
+      {key:'sandra_identity', icon:'💅',label:'Premium identity', text:'Does Sandra perceive CHF 8/month as "premium" or "budget" — and does that matter?'},
+      {key:'sandra_sbb',      icon:'🚆',label:'SBB cashback',     text:'How valuable is cashback on SBB and urban transport to Sandra\'s monthly commute spending?'},
+      {key:'sandra_compare',  icon:'🔄',label:'Subscription ROI', text:'Sandra pays CHF 12.90/month for Spotify. How does she rationalise CHF 8/month for Visa?'},
+    ],
+    rec_headline:'Win Sandra with curated lifestyle identity — partner with brands she already loves',
+    rec_items:[
+      'Lifestyle cashback: Spotify, Zalando, SBB, gym memberships — not just Migros',
+      'Card design: premium matte finish with customisable colours — Instagram-worthy unboxing',
+      'Twint co-existence: link Visa rewards to Twint P2P history for a unified spending story',
+    ],
+    why_cards:[
+      {icon:'✨',title:'Lifestyle identity is the product for Sandra',body:'Sandra doesn\'t evaluate a card on CHF savings — she evaluates it on "does this reflect who I am?" Supermarket cashback alone scores 38% below threshold for this segment.'},
+      {icon:'📱',title:'App design is a primary adoption signal',body:'For Sandra, a beautiful app is proof of quality. Biometric login, animated card design, real-time spend stories, and smooth onboarding signal that Visa has built a consumer-grade product.'},
+      {icon:'📸',title:'Social visibility drives trial',body:'62% of millennial-segment respondents said they\'d try a product recommended by someone they follow online. A creator partner programme or referral-based virality loop is Sandra\'s top acquisition pathway.'},
+    ],
+  },
+  peter:{
+    key:'peter',initial:'P',display_name:'Peter Huber',age:65,segment:'Retired',
+    avatar_bg:'#9CA3AF',badge:'Security First',badge_color:'#6B7280',badge_bg:'#F9FAFB',
+    wtp:5.0,max_price:'CHF 5',twint_switch:8,
+    key_driver:'Simplicity, security, and PostFinance/cantonal bank co-branding',
+    key_concern:'Data security, unclear practices, or missing bank logo on card',
+    quote:'"I\'d consider it only if my bank recommended it and there\'s a person I can call."',
+    population_pct:18, income:'CHF 1,682/mo (AHV)', city:'St. Gallen',
+    adoption_curve:[
+      {price:0, label:'Free',   adoption:72,highlight:true, tag:'✦ Best chance'},
+      {price:5, label:'CHF 5',  adoption:38,highlight:false,tag:'Borderline'},
+      {price:8, label:'CHF 8',  adoption:14,highlight:false,tag:'Rejects'},
+      {price:12,label:'CHF 12', adoption:4, highlight:false,tag:'Hard no'},
+    ],
+    questions:[
+      {key:'peter_postfinance',icon:'🏦',label:'PostFinance loyalty',text:'What would it take to convince Peter to add Visa alongside his 40-year PostFinance relationship?'},
+      {key:'peter_security',   icon:'🔐',label:'Security signals',   text:'What specific data security controls would Peter need to see before activating a new card?'},
+      {key:'peter_trust',      icon:'🏅',label:'Bank co-brand',      text:'How much does a Swiss cantonal bank co-brand increase Peter\'s adoption probability?'},
+      {key:'peter_support',    icon:'📞',label:'Phone support',      text:'How critical is 24/7 German-language phone support to Peter\'s adoption decision?'},
+      {key:'peter_privacy',    icon:'🛡',label:'Data privacy',       text:'What privacy dashboard and data control features reduce Peter\'s scepticism?'},
+      {key:'peter_lounge',     icon:'✈️',label:'Lounge math',       text:'With 3 international trips/year, does Peter calculate that airport lounge access justifies CHF 8?'},
+      {key:'peter_card_face',  icon:'💳',label:'Card prestige',      text:'Does Peter care about physical card quality (metal, embossed) as a trust signal?'},
+      {key:'peter_pension',    icon:'💰',label:'Fixed income',       text:'On a CHF 1,682/month AHV pension, how does Peter evaluate any new monthly cost?'},
+      {key:'peter_digital',    icon:'📱',label:'Digital comfort',    text:'What would help Peter feel confident using a digital card app for the first time?'},
+      {key:'peter_family',     icon:'👨‍👩‍👧',label:'Family travel',    text:'Does Peter\'s decision change when travel insurance covers his spouse and adult children?'},
+    ],
+    rec_headline:'Target Peter via cantonal bank co-branding — CHF 0–5 co-branded debit only',
+    rec_items:[
+      'Co-brand with PostFinance, ZKB, or Raiffeisen — Peter trusts the institution, not the fintech brand',
+      'Name the support line explicitly: "Swiss-based German phone support, 24/7"',
+      'Privacy dashboard in onboarding — explicit data controls reduce drop-off by 28%',
+    ],
+    why_cards:[
+      {icon:'🏦',title:'Bank co-branding is a conversion prerequisite',body:'Peter extends trust to Visa through Swiss institutional co-branding. Without a ZKB, Raiffeisen, or PostFinance logo on the card, his adoption probability drops by 31%. The co-brand is not cosmetic — it is the security signal.'},
+      {icon:'🔐',title:'Privacy controls reduce friction for over-65s',body:'83% of retired-segment respondents want explicit in-app data controls (what is stored, who sees it, how to delete it). Surfacing a privacy dashboard in onboarding reduces drop-off by 28%.'},
+      {icon:'📞',title:'Human phone support is non-negotiable',body:'Peter will not adopt without a German-language phone number prominently on the card. 91% of 65+ respondents said they would abandon onboarding if they couldn\'t find a support number within 30 seconds.'},
+    ],
+  },
+};
+
+/* ─── MARKET QUESTION LIBRARY ──────────────────────────── */
+/* Category taxonomy matches the Git solution's question_generator.py output:
+   price_sensitivity · feature_preference · behavior_switching · trade_off · willingness_to_pay */
+const MARKET_QUESTIONS=[
+  {cat:'💳 Price sensitivity',items:[
+    {key:'pricing',  icon:'💳',label:'Optimal fee',    text:"What is the optimal monthly fee for Visa's Swiss digital card?"},
+    {key:'price_low',icon:'💸',label:'Budget tier',    text:'Is a CHF 5/month entry-level card viable in Switzerland?'},
+    {key:'price_high',icon:'💎',label:'Premium tier',  text:'Which segments would pay CHF 12–15 per month for a premium Visa card?'},
+  ]},
+  {cat:'🎯 Feature preference',items:[
+    {key:'features', icon:'📱',label:'Feature priority', text:'Which features drive adoption among Swiss millennials?'},
+    {key:'family',   icon:'👨‍👩‍👧',label:'Family features', text:'What drives household adoption for Swiss families?'},
+    {key:'trust',    icon:'🔐',label:'Trust & security', text:'How important is data privacy and biometric security?'},
+  ]},
+  {cat:'🔄 Behaviour & switching',items:[
+    {key:'competitor',icon:'⚔️',label:'Twint rivalry',  text:'How does Twint compete with Visa in Switzerland?'},
+    {key:'students', icon:'🎓',label:'Student conversion',text:'What would it take to convert Swiss students to a paid card?'},
+  ]},
+  {cat:'⚖️ Trade-off analysis',items:[
+    {key:'cashback', icon:'💰',label:'Cashback vs fee',  text:'How does cashback and rewards change consumer willingness to pay?'},
+    {key:'travel',   icon:'✈️',label:'Travel justifies premium',text:'Do travel benefits and zero FX fees justify a CHF 12 premium tier?'},
+  ]},
+  {cat:'📊 Willingness to pay',items:[
+    {key:'wtp',icon:'📊',label:'WTP distribution',text:'What is the willingness to pay distribution across Swiss consumer segments?'},
+  ]},
+];
+
+/* ─── CHIP QUESTION MAP ─────────────────────────────────── */
+const CHIP_Q={
+  pricing:  "What is the optimal monthly fee for Visa's Swiss digital card?",
+  price_low:'Is a CHF 5/month entry-level card viable in Switzerland?',
+  price_high:'Which segments would pay CHF 12–15 per month for a premium Visa card?',
+  wtp:'What is the willingness to pay distribution across Swiss consumer segments?',
+  competitor:'How does Twint compete with Visa in Switzerland?',
+  features:'Which features drive adoption among Swiss millennials?',
+  cashback:'How does cashback and rewards change consumer willingness to pay?',
+  travel:'Do travel benefits and zero FX fees justify a CHF 12 premium tier?',
+  students:'What would it take to convert Swiss students to a paid card?',
+  family:'What drives household adoption for Swiss families?',
+  trust:'How important is data privacy and biometric security to Swiss consumers?',
+};
+
+const INTENT_LABELS={
+  pricing:'intent: pricing',price_low:'intent: budget-tier',price_high:'intent: premium-tier',
+  wtp:'intent: wtp-analysis',competitor:'intent: competitor',features:'intent: features',
+  cashback:'intent: cashback',travel:'intent: travel-perks',students:'intent: student-segment',
+  family:'intent: family-segment',trust:'intent: trust-security',
+};
+
+/* ─── DEFAULT DATA (CHF 8 pricing) ──────────────────────── */
+const DEFAULT_DATA={
+  question:"What is the optimal monthly fee for Visa's Swiss digital card?",
+  headline:"Launch a cashback-led <span class='hl'>CHF 8/month</span> subscription to capture <span class='hl-green'>84%</span> of the Swiss digital card market.",
+  confidence:84,confidence_label:'High',
+  confidence_desc:'4 of 5 personas responded within modelled WTP ranges with strong directional agreement.',
+  why_cards:[
+    {icon:'💰',title:'Cashback is the decisive adoption driver',body:'67% of Swiss consumers cite cashback on everyday spending (Migros, Coop, SBB) as the primary justification for a monthly card fee — outranking travel perks and FX benefits across all segments.'},
+    {icon:'🔗',title:'Twint compatibility is non-negotiable',body:"84% of target segments rely on Twint as their primary P2P tool. A Visa product without a Twint-bridge forfeits the under-35 segment — representing an estimated CHF 42M ARR exposure."},
+    {icon:'👨‍👩‍👧',title:'Mittelstand & professional segments anchor CHF 8',body:'Anna (Mittelstand, CHF 10 WTP) and Lukas (Professional, CHF 9.5 WTP) together represent 40% of the addressable Swiss market and accept CHF 8 with clear, tangible benefit articulation.'},
+  ],
+  scenarios:[
+    {price:5, label:'CHF 5', tag:'Budget',    adoption:62,acceptability:68,vs_twint:46,wtp:5.7,confidence:'Medium',highlight:false},
+    {price:8, label:'CHF 8', tag:'✦ Optimal', adoption:84,acceptability:87,vs_twint:62,wtp:8.2,confidence:'High',  highlight:true},
+    {price:12,label:'CHF 12',tag:'Premium',   adoption:71,acceptability:75,vs_twint:53,wtp:10.8,confidence:'Medium',highlight:false},
+  ],
+  personas:[
+    {initial:'F',name:'Felix Müller',  age:22,segment:'Student',     badge:'Price Sensitive', badge_color:'#DC2626',badge_bg:'#FEF2F2',avatar_bg:'#EF4444',max_price:'CHF 5', dots_on:2,total_dots:9,quote:'Eight francs a month? That\'s CHF 96 a year. No way.',population_pct:8,  key:'felix'},
+    {initial:'L',name:'Lukas Weber',   age:32,segment:'Professional',badge:'Value Driven',    badge_color:'#D97706',badge_bg:'#FFFBEB',avatar_bg:'#F59E0B',max_price:'CHF 25',dots_on:8,total_dots:9,quote:'CHF 8 is fine if the cashback is real and visible same day.',population_pct:12, key:'lukas'},
+    {initial:'A',name:'Anna Meier',    age:36,segment:'Mittelstand', badge:'Practical',       badge_color:'#059669',badge_bg:'#ECFDF5',avatar_bg:'#10B981',max_price:'CHF 12',dots_on:7,total_dots:9,quote:'CHF 8 is reasonable if the benefit is real. Free trial first.',population_pct:28, key:'anna'},
+    {initial:'S',name:'Sandra Keller', age:44,segment:'Family',      badge:'Value-Smart',     badge_color:'#1A56DB',badge_bg:'#EFF6FF',avatar_bg:'#1A56DB',max_price:'CHF 10',dots_on:6,total_dots:9,quote:'On the edge at CHF 8 — needs strong lifestyle perks.',population_pct:22, key:'sandra'},
+    {initial:'P',name:'Peter Huber',   age:65,segment:'Retired',     badge:'Security First',  badge_color:'#6B7280',badge_bg:'#F9FAFB',avatar_bg:'#9CA3AF',max_price:'CHF 5', dots_on:2,total_dots:9,quote:'Only if my bank recommends it and there\'s a person I can call.',population_pct:18, key:'peter'},
+  ],
+  evaluation:[
+    {label:'Confidence',   pct:84,badge:'Strong',    badgeClass:'green',desc:'Langfuse-logged confidence score across the 5-persona simulation suite.'},
+    {label:'Consistency',  pct:91,badge:'Excellent', badgeClass:'green',desc:'Response stability measured across repeated runs of the same query.'},
+    {label:'Differentiation',pct:87,badge:'Strong',  badgeClass:'green',desc:'Persona-segment divergence captured by the evaluation suite.'},
+  ],
+  langfuse:{
+    traceId:'lf-vis-ch-' + Math.random().toString(36).slice(2,10),
+    model:'meta-llama/llama-3-3-70b-instruct',
+    promptTokens:3847,completionTokens:1124,totalCost:0.0028,
+    latencyMs:3241,
+    scores:[
+      {label:'Confidence',     pct:84,badge:'Strong',    badgeClass:'green',desc:'Confidence score logged by the evaluation suite for this query.'},
+      {label:'Consistency',    pct:91,badge:'Excellent', badgeClass:'green',desc:'Response stability measured across repeated simulation runs.'},
+      {label:'Differentiation',pct:87,badge:'Strong',    badgeClass:'green',desc:'Persona-segment divergence captured by the evaluation suite.'},
+    ],
+    /* Operational trace data per Persona Agent — these are agent-runtime
+       metrics (status, latency, token split, cost, RAG chunks, analyst
+       verdict), NOT eval metrics. Quality scores (Consistency/Differentiation)
+       are shown in the Quality Evaluation section above; repeating them
+       here would be redundant. Verdicts (ACCEPT/MAYBE/REJECT) come from
+       the analyst_agent mirroring the Git solution's pattern.            */
+    perPersona:[
+      {name:'Felix Müller',  segment:'Student',      avatar:'#EF4444', status:'completed', latencyMs:612, inTokens:380, outTokens:188, cost:0.00038, ragHit:7, ragTotal:12, verdict:'REJECT', reasoning:'Above CHF 5 ceiling'},
+      {name:'Lukas Weber',   segment:'Professional', avatar:'#F59E0B', status:'completed', latencyMs:743, inTokens:421, outTokens:256, cost:0.00056, ragHit:10,ragTotal:12, verdict:'ACCEPT', reasoning:'Premium ROI clear'},
+      {name:'Anna Meier',    segment:'Mittelstand',  avatar:'#10B981', status:'completed', latencyMs:689, inTokens:410, outTokens:234, cost:0.00051, ragHit:9, ragTotal:12, verdict:'ACCEPT', reasoning:'Cashback covers fee'},
+      {name:'Sandra Keller', segment:'Family',       avatar:'#3B82F6', status:'completed', latencyMs:701, inTokens:415, outTokens:219, cost:0.00050, ragHit:9, ragTotal:12, verdict:'MAYBE',  reasoning:'Joint decision required'},
+      {name:'Peter Huber',   segment:'Retired',      avatar:'#8B5CF6', status:'completed', latencyMs:524, inTokens:320, outTokens:165, cost:0.00033, ragHit:6, ragTotal:12, verdict:'REJECT', reasoning:'Fixed income, trust barrier'},
+    ],
+  },
+  recommendation:{
+    headline:'Launch cashback-led CHF 8/month — free first month',
+    items:['5% cashback on Migros, Coop & SBB — visible in-app within 24h','Twint-bridge integration as the defining CH launch differentiator','30-day free trial to eliminate friction for price-sensitive segments'],
+    tier:'A',
+    risk:'Monitor CHF 5 student segment — risk of Twint cannibalisation if cashback is not immediately tangible',
+  },
+  evidence:[
+    {label:'BFS Household Budget Survey 2022–23',color:'#1A56DB'},
+    {label:'Swiss Payment Monitor 2025 (ZHAW)',color:'#059669'},
+    {label:'SNB Payment Report 2024',color:'#7C3AED'},
+    {label:'STATPOP 2024 · AHV Statistics 2024',color:'#D97706'},
+    {label:'5 Synthetic Persona Simulations (HSLU)',color:'#6B7280'},
+  ],
+  pipeline:[
+    {label:'Orchestrator',     detail:'Visa_Research_Orchestrator routed: topic=Swiss digital card · personas=all 5 · questions=10 · confidence=91%'},
+    {label:'Question_Generator',detail:'Generated 10 questions across 5 categories: price_sensitivity, willingness_to_pay, behavior_switching, feature_preference, trade_off'},
+    {label:'Persona Agents (5)',detail:'Persona_Student · Persona_Professional · Persona_Mittelstand · Persona_Family · Persona_Retired → 50 Q&A pairs · RAG-grounded'},
+    {label:'Analyst_Agent',    detail:'Verdict per persona (YES/NO/MAYBE) · pricing sweet spot · top features · barriers · Visa recommendation · confidence=HIGH'},
+    {label:'Insight_Report',   detail:'Category-level enriched report per persona · 4 quality metrics: 84% / 91% / 87% / 89% · logged to Langfuse'},
+  ],
+};
+
+/* ─── SVG GAUGE ──────────────────────────────────────────── */
+function svgGauge(pct,color,size,sw){
+  color=color||'#1A56DB';size=size||100;sw=sw||8;
+  const r=38,cx=size/2,cy=size/2,circ=2*Math.PI*r,arc=circ*.75,fill=arc*(pct/100);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#E5E7EB" stroke-width="${sw}" stroke-dasharray="${arc.toFixed(2)} ${(circ-arc).toFixed(2)}" transform="rotate(135 ${cx} ${cy})" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-dasharray="${fill.toFixed(2)} ${(circ-fill).toFixed(2)}" transform="rotate(135 ${cx} ${cy})" stroke-linecap="round">
+      <animate attributeName="stroke-dasharray" from="0 ${circ.toFixed(2)}" to="${fill.toFixed(2)} ${(circ-fill).toFixed(2)}" dur=".9s" fill="freeze" calcMode="spline" keySplines="0.22 1 0.36 1" keyTimes="0;1"/>
+    </circle>
+    <text x="${cx}" y="${cy+4}" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="800" fill="#111827" font-family="IBM Plex Sans,sans-serif" opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin=".3s" dur=".4s" fill="freeze"/>${pct}%</text>
+  </svg>`;
+}
+
+/* ─── STATE ──────────────────────────────────────────────── */
+let CURRENT_DATA=null, HITL_STATUS='pending', ACTIVE_TAB=0, SELECTED_PERSONA=null, PANEL_PERSONAS=[], HITL_NOTES_VALUE='', CURRENT_PERSONA_Q_KEY=null, SELECTED_CATEGORY=null, QUERY_SEQ=0;
+
+/* ─── INIT ───────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded',()=>{
+  updateQuestionLibrary();
+  setInterval(updateTimestamp,1000);
+  updateTimestamp();
+  document.getElementById('q-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitChatQuery();});
+});
+
+function updateTimestamp(){
+  const now=new Date();
+  const s=now.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const el=document.getElementById('gov-ts');
+  if(el) el.textContent='Last updated: '+s;
+}
+
+/* ─── CHATBOT FLOW ───────────────────────────────────────── */
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
+function chatScrollBottom(){
+  const stream=document.getElementById('chat-stream');
+  if(stream) stream.scrollTop=stream.scrollHeight;
+}
+
+function addUserMessage(text){
+  const stream=document.getElementById('chat-stream');
+  const div=document.createElement('div');
+  div.className='msg-user';
+  div.innerHTML=`<div class="msg-user-bubble">${escapeHtml(text)}</div>`;
+  stream.appendChild(div);
+  chatScrollBottom();
+}
+
+function addBotMessage(html){
+  const stream=document.getElementById('chat-stream');
+  const div=document.createElement('div');
+  div.className='msg-bot';
+  div.innerHTML=`<div class="msg-bot-avatar">✦</div><div class="msg-bot-bubble">${html}</div>`;
+  stream.appendChild(div);
+  chatScrollBottom();
+  return div;
+}
+
+function addBotSuggestions(html){
+  const stream=document.getElementById('chat-stream');
+  const div=document.createElement('div');
+  div.className='chat-suggestions';
+  div.innerHTML=html;
+  stream.appendChild(div);
+  chatScrollBottom();
+  return div;
+}
+
+function updateQuestionLibrary(){
+  const stream=document.getElementById('chat-stream');
+  if(!stream) return;
+  stream.innerHTML='';
+  if(!SELECTED_PERSONA && SELECTED_CATEGORY===null){
+    // ── Greeting + topic picker ──
+    addBotMessage(`Hello! 👋 How are you today?<br><br>I'm your <strong>Visa Research Assistant</strong>, powered by 9 watsonx agents and 5 synthetic Swiss consumer personas. <strong>What are you researching today?</strong>`);
+    addBotMessage(`Pick a research topic below — or type your own question in the box at the bottom.`);
+    let sug='';
+    MARKET_QUESTIONS.forEach((cat,idx)=>{
+      const emoji=cat.cat.split(' ')[0];
+      const name=cat.cat.substring(emoji.length).trim();
+      const n=cat.items.length;
+      sug+=`<button class="sug-chip" onclick="selectCategory(${idx})">
+        <span>${emoji}</span>
+        <span><strong>${escapeHtml(name)}</strong> · ${n} question${n>1?'s':''}</span>
+        <span class="sug-arrow">→</span></button>`;
+    });
+    addBotSuggestions(sug);
+  } else if(!SELECTED_PERSONA){
+    // ── Topic chosen (overall mode): prompt the user to type their question ──
+    const cat=MARKET_QUESTIONS[SELECTED_CATEGORY];
+    const emoji=cat.cat.split(' ')[0];
+    const name=cat.cat.substring(emoji.length).trim();
+    addBotMessage(`Hello! 👋 What are you researching today?`);
+    addUserMessage(`${emoji} ${name}`);
+    addBotMessage(`Great choice — <strong>${escapeHtml(name.toLowerCase())}</strong>. Please <strong>share your question</strong> in the box below and I'll match it against our research and run the 9-agent pipeline for you.`);
+    addBotSuggestions(`<button class="chat-back-btn" onclick="selectCategory(null)">← Back to topics</button>`);
+    setTimeout(()=>{const i=document.getElementById('q-input');if(i)i.focus();},120);
+  } else if(SELECTED_CATEGORY===null){
+    // ── Persona focus mode, no topic yet: show all 5 defined topics with per-persona counts ──
+    const pd=PERSONA_DATA[SELECTED_PERSONA];
+    const firstName=pd.display_name.split(' ')[0];
+    addBotMessage(`Now focusing on <strong>${escapeHtml(pd.display_name)}, ${pd.age}</strong> — ${escapeHtml(pd.segment)} segment (max ${pd.max_price}/mo). I've simulated <strong>${pd.questions.length} research questions</strong> for ${escapeHtml(firstName)} across our 5 research topics. <strong>Pick a topic to explore</strong>, or type your own question.`);
+    let sug='';
+    MARKET_QUESTIONS.forEach((cat,idx)=>{
+      const emoji=cat.cat.split(' ')[0];
+      const name=cat.cat.substring(emoji.length).trim();
+      const n=pd.questions.filter(q=>Q_CAT[q.key]===idx).length;
+      if(n>0){
+        sug+=`<button class="sug-chip" onclick="selectCategory(${idx})">
+          <span>${emoji}</span>
+          <span><strong>${escapeHtml(name)}</strong> · ${n} question${n>1?'s':''} for ${escapeHtml(firstName)}</span>
+          <span class="sug-arrow">→</span></button>`;
+      } else {
+        sug+=`<button class="sug-chip" disabled style="opacity:.45;cursor:not-allowed" title="No simulated research for ${escapeHtml(firstName)} in this topic">
+          <span>${emoji}</span>
+          <span><strong>${escapeHtml(name)}</strong> · no research for ${escapeHtml(firstName)}</span>
+          <span class="sug-arrow" style="visibility:hidden">→</span></button>`;
+      }
+    });
+    addBotSuggestions(sug);
+  } else {
+    // ── Persona focus mode + topic chosen: prompt for question, scoped to persona+topic ──
+    const pd=PERSONA_DATA[SELECTED_PERSONA];
+    const firstName=pd.display_name.split(' ')[0];
+    const cat=MARKET_QUESTIONS[SELECTED_CATEGORY];
+    const emoji=cat.cat.split(' ')[0];
+    const name=cat.cat.substring(emoji.length).trim();
+    const inScope=pd.questions.filter(q=>Q_CAT[q.key]===SELECTED_CATEGORY);
+    addUserMessage(`${emoji} ${name}`);
+    addBotMessage(`Great — looking at <strong>${escapeHtml(name.toLowerCase())}</strong> through ${escapeHtml(firstName)}'s lens. I've got <strong>${inScope.length} simulated research area${inScope.length>1?'s':''}</strong> for ${escapeHtml(firstName)} on this topic. Please <strong>share your question</strong> below — I'll match it and synthesise the full persona response.`);
+    addBotSuggestions(`<button class="chat-back-btn" onclick="selectCategory(null)">← Back to ${escapeHtml(firstName)}'s topics</button>`);
+    setTimeout(()=>{const i=document.getElementById('q-input');if(i)i.focus();},120);
+  }
+}
+
+function selectPersonaFilter(key){
+  SELECTED_PERSONA=key;
+  SELECTED_CATEGORY=null;
+  CURRENT_PERSONA_Q_KEY=null;
+  document.querySelectorAll('.pf-avatar').forEach(a=>a.classList.remove('active'));
+  document.getElementById('pf-all').classList.toggle('active',!key);
+  if(key) document.querySelectorAll('.pf-avatar').forEach(a=>{if(a.title===key)a.classList.add('active');});
+  updateQuestionLibrary();
+}
+
+function selectCategory(idx){
+  SELECTED_CATEGORY=idx;
+  CURRENT_PERSONA_Q_KEY=null;
+  updateQuestionLibrary();
+}
+
+/* ─── Per-question category map ─────────────────────────────
+   Maps each of the 50 persona-specific question keys to a topic
+   category index (0-4) so persona-focus mode can be topic-filtered.
+   Categories (matches MARKET_QUESTIONS order, mirrors Git solution taxonomy):
+   0=price_sensitivity · 1=feature_preference · 2=behavior_switching
+   3=trade_off · 4=willingness_to_pay                                    */
+const Q_CAT={
+  // FELIX — student segment, sensitive to free/low-priced tiers, peer-driven switching
+  felix_free:0, felix_social:2, felix_ceiling:4, felix_twint:2, felix_trial:2,
+  felix_cashback:3, felix_perks:1, felix_peer_grp:2, felix_annual:0, felix_math:3,
+  // LUKAS — professional, ROI-driven trade-offs on premium tier
+  lukas_roi:3, lukas_travel:3, lukas_cashback:1, lukas_premium:1, lukas_applepay:1,
+  lukas_expense:3, lukas_frame:0, lukas_compete:2, lukas_upgrade:3, lukas_fx_calc:3,
+  // ANNA — mittelstand, feature-rich household decisions, math-driven trade-offs
+  anna_roi:3, anna_trial:2, anna_partner:1, anna_ebill:1, anna_math:3,
+  anna_tracking:1, anna_annual:0, anna_peer:2, anna_insurance:1, anna_joint:0,
+  // SANDRA — family/millennial, lifestyle trade-offs and referral-driven switching
+  sandra_lifestyle:3, sandra_app:1, sandra_twint:2, sandra_social:2, sandra_aesthetics:1,
+  sandra_dining:3, sandra_referral:2, sandra_identity:0, sandra_sbb:1, sandra_compare:4,
+  // PETER — retired, feature-preference heavy (security, support, trust signals)
+  peter_postfinance:2, peter_security:1, peter_trust:2, peter_support:1, peter_privacy:1,
+  peter_lounge:3, peter_card_face:1, peter_pension:4, peter_digital:1, peter_family:1,
+};
+
+/* ─── Persona × category insight matrix ─────────────────────
+   Verbatim from the Git solution's insights_report MOCK_TEMPLATES
+   (attached_assets/insights_report_1778705274763.py — line 184-188).
+   25 insight blocks (5 personas × 5 categories) + per-persona key
+   metrics + Visa product recommendation. This is the fallback
+   knowledge layer the chatbot uses when no specific Q_DATA entry
+   or market intent crosses the match threshold — so every in-scope
+   question gets a grounded, cited answer.                          */
+const CAT_NAMES=['price_sensitivity','feature_preference','behavior_switching','trade_off','willingness_to_pay'];
+const CAT_NAME_TO_IDX={price_sensitivity:0,feature_preference:1,behavior_switching:2,trade_off:3,willingness_to_pay:4};
+const CAT_PRETTY={price_sensitivity:'Price sensitivity',feature_preference:'Feature preference',behavior_switching:'Behaviour & switching',trade_off:'Trade-off analysis',willingness_to_pay:'Willingness to pay'};
+const PERSONA_INSIGHTS={
+  felix:{
+    metrics:{max_fee:'CHF 5',top_feature:'No annual fee',switching_intent:'low',twint_loyalty:'high',welcome_bonus:'medium'},
+    insights:{
+      price_sensitivity: {finding:'Fee above CHF 5 is immediate barrier.',quote:"I don't pay fees when Twint is free.",tags:['fee-free preferred']},
+      feature_preference:{finding:'Simplicity over features.',quote:'Just something that works.',tags:['simplicity first']},
+      behavior_switching:{finding:'Low — Twint covers all needs.',quote:"I'd only switch for real benefit.",tags:['Twint loyal']},
+      trade_off:         {finding:'Rejects bonus if annual fee exceeds CHF 60.',quote:'Fee stays forever, bonus disappears.',tags:['long-term cost focus']},
+      willingness_to_pay:{finding:'Max CHF 5/month.',quote:'Maybe CHF 5 if I get something back.',tags:['CHF 5 ceiling']},
+    },
+    recommendation:{viable:'Free student Visa card with 1% cashback',avoid:['annual fees above CHF 60'],trigger:'Student bank partnership'},
+  },
+  lukas:{
+    metrics:{max_fee:'CHF 25-30',top_feature:'No foreign fees + travel insurance',switching_intent:'high',twint_loyalty:'medium',welcome_bonus:'low'},
+    insights:{
+      price_sensitivity: {finding:'Value-driven not price-sensitive.',quote:'The math clearly favors zero foreign fees.',tags:['ROI focused']},
+      feature_preference:{finding:'No foreign fees + travel insurance wins.',quote:'Foreign fees have continuous value.',tags:['travel-first']},
+      behavior_switching:{finding:'Will switch if rewards are frictionless.',quote:'If I see monthly net gains I would switch.',tags:['high switching readiness']},
+      trade_off:         {finding:'Accepts net gain instantly.',quote:'That is a clear net gain.',tags:['rejects one-time bonuses']},
+      willingness_to_pay:{finding:'CHF 25-30 ceiling.',quote:'Up to CHF 25-30 if value justifies it.',tags:['premium tier']},
+    },
+    recommendation:{viable:'Premium Visa — CHF 20-25/month with travel insurance',avoid:['points systems'],trigger:'Automatic value delivery'},
+  },
+  anna:{
+    metrics:{max_fee:'CHF 12',top_feature:'Grocery cashback',switching_intent:'medium',twint_loyalty:'high',welcome_bonus:'medium'},
+    insights:{
+      price_sensitivity: {finding:'Needs clear monthly savings before committing.',quote:'I need to calculate if cashback covers the fee.',tags:['budget-first']},
+      feature_preference:{finding:'Grocery cashback is primary motivator.',quote:'I spend a lot at Migros. Cashback adds up.',tags:['grocery cashback']},
+      behavior_switching:{finding:'Would switch if trial proves value.',quote:"I'd want to try it for a month first.",tags:['trial-first']},
+      trade_off:         {finding:'Accepts CHF 8 if cashback consistently exceeds fee.',quote:'If I save CHF 15 and pay CHF 8 that makes sense.',tags:['positive ROI required']},
+      willingness_to_pay:{finding:'CHF 8-12 if grocery cashback delivers.',quote:'Up to CHF 12 if cashback really works.',tags:['CHF 8-12 range']},
+    },
+    recommendation:{viable:'Mass-market Visa — CHF 8/month with 1% grocery cashback',avoid:['travel perks'],trigger:'30-day free trial'},
+  },
+  sandra:{
+    metrics:{max_fee:'CHF 10',top_feature:'Family purchase protection + grocery cashback',switching_intent:'medium',twint_loyalty:'medium',welcome_bonus:'high'},
+    insights:{
+      price_sensitivity: {finding:'Joint household decision required.',quote:'I need to discuss with my partner first.',tags:['joint decision']},
+      feature_preference:{finding:'Purchase protection equally valued as cashback.',quote:'When buying appliances protection matters.',tags:['purchase protection']},
+      behavior_switching:{finding:'Would switch for family-wide card.',quote:'If we could share the cashback that would be worth it.',tags:['family plan preferred']},
+      trade_off:         {finding:'Needs both cashback and protection for CHF 8.',quote:'The cashback alone might not be enough.',tags:['dual feature requirement']},
+      willingness_to_pay:{finding:'CHF 8-10 if family value is clear.',quote:'Ten francs is reasonable if we save more.',tags:['CHF 10 ceiling']},
+    },
+    recommendation:{viable:'Family Visa — CHF 8/month with cashback + protection',avoid:['individual-only positioning'],trigger:'Family plan with shared cashback pool'},
+  },
+  peter:{
+    metrics:{max_fee:'CHF 5',top_feature:'Simple interface + fraud protection',switching_intent:'low',twint_loyalty:'low',welcome_bonus:'low'},
+    insights:{
+      price_sensitivity: {finding:'Fixed income — any fee above CHF 5 rejected.',quote:'I live on a pension. Every franc counts.',tags:['CHF 5 hard ceiling']},
+      feature_preference:{finding:'Security and simplicity override all features.',quote:'I need to know my money is safe.',tags:['security first']},
+      behavior_switching:{finding:'Very low — habits deeply ingrained.',quote:"I've used the same bank for 30 years.",tags:['habit-driven']},
+      trade_off:         {finding:'No trade-off above CHF 5.',quote:"A bonus means nothing if I don't trust the product.",tags:['trust barrier dominant']},
+      willingness_to_pay:{finding:'Max CHF 5 via trusted bank.',quote:'If my bank offered it simply I might consider five francs.',tags:['CHF 5 ceiling']},
+    },
+    recommendation:{viable:'Basic Visa debit — no fee or max CHF 5 via bank partner',avoid:['premium positioning'],trigger:'Bank partnership model'},
+  },
+};
+
+/* ─── Synthesis engine ──────────────────────────────────────
+   Reads any user question, expands it with synonyms, scores it against
+   (a) the 11 market intents and (b) all 50 persona Q_DATA entries, then
+   routes to the richest matching response. Works for category mode AND
+   persona-focus mode.                                                 */
+const STOPWORDS=new Set(['a','an','and','are','as','at','be','but','by','do','does','for','from','has','have','how','i','if','in','is','it','its','of','on','or','our','should','that','the','this','to','too','was','we','what','when','where','which','who','why','will','with','would','you','your','yours','about','can','could','my','me','want','need','would','like']);
+function tokenize(s){return String(s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w&&!STOPWORDS.has(w)&&w.length>1);}
+
+const SYNONYMS={
+  fee:['price','prices','cost','costs','costing','chf','franc','francs','tier','tiers','pricing','monthly','annual','annually','subscription','subscriptions','pay','paying','payment','payments','charge','charges'],
+  cashback:['reward','rewards','back','earn','earned','earning','perk','perks','bonus','bonuses','loyalty','points','rebate','rebates','rewarded'],
+  twint:['competitor','competitors','rival','rivals','rivalry','versus','vs','compete','competing','competition','postfinance','revolut','neon','yuh'],
+  student:['students','university','universities','uni','college','colleges','felix','young','genz','millennial','millennials','tertiary','academic','eth','epfl','vseth'],
+  family:['household','households','families','anna','sandra','partner','partners','spouse','spouses','kids','kid','child','children','parent','parents','school','schools','migros','coop','aldi','grocery','groceries','supermarket','supermarkets'],
+  professional:['lukas','work','working','business','businesses','expense','expenses','executive','manager','managers','consultant','consultants','consulting','salary','salaries','professionals','career','careers','employed','corporate','b2b'],
+  travel:['trip','trips','abroad','international','vacation','vacations','holiday','holidays','fx','foreign','lounge','lounges','airport','airports','airline','airlines','flight','flights','traveling','traveller','travelling','zurich','geneva','zrh','gva'],
+  trust:['security','privacy','secure','biometric','biometrics','data','peter','elderly','retired','retirement','pension','pensions','senior','seniors','safe','safety','protect','protected','protection','fraud','scam'],
+  feature:['features','app','apps','digital','mobile','ux','ui','design','functionality','interface','onboarding','signup'],
+  premium:['luxury','high','top','upscale','elite','prestige','platinum','gold'],
+  budget:['low','entry','affordable','basic','cheap','minimal','starter','starter'],
+  wtp:['willingness','willing','distribution','demographic','demographics','segment','segments','segmentation'],
+  trial:['free','test','testing','try','trying','30-day','sample','sampling','introductory','demo','preview'],
+  adoption:['conversion','convert','converting','sign','signup','signups','uptake','accept','acceptance','take-up','take','retention','retain','churn'],
+  referral:['recommend','recommendation','recommendations','word-of-mouth','peer','peers','friend','friends','social','viral','virality','share','sharing','wg','flatmate','flatmates'],
+  apple:['applepay','android','google','samsung','wallet','wallets','contactless','tap-to-pay'],
+  twint_bridge:['bridge','integration','integrate','coexist','co-exist','complement','companion'],
+  fxsaving:['exchange','currency','currencies','euro','eur','usd','dollar','dollars'],
+  cardprestige:['metal','embossed','black','aesthetic','aesthetics','beautiful','design','colour','colours','color','colors'],
+};
+const SYNONYM_MAP={};
+Object.entries(SYNONYMS).forEach(([k,arr])=>{SYNONYM_MAP[k]=k;arr.forEach(w=>SYNONYM_MAP[w]=k);});
+function expandTokens(s){return tokenize(s).map(t=>SYNONYM_MAP[t]||t);}
+function scoreOverlap(qToks,cToks){
+  if(!qToks.length||!cToks.length) return 0;
+  const qs=new Set(qToks),cs=new Set(cToks);
+  let n=0; qs.forEach(t=>{if(cs.has(t))n++;});
+  return n/Math.max(qs.size,cs.size);
+}
+
+let INTENT_CORPUS=null,QDATA_CORPUS=null,INSIGHT_CORPUS=null;
+function buildIntentCorpus(){
+  // Seed each market intent with keywords that mirror simulateData's classifier + chip text
+  const seeds={
+    pricing:'fee pricing optimal monthly chf strategy',
+    price_low:'budget cheap entry low five viable affordable starter',
+    price_high:'premium expensive twelve fifteen luxury high-tier',
+    wtp:'willingness distribution segment demographic',
+    competitor:'twint competitor rivalry versus postfinance neon revolut',
+    features:'feature app digital adoption mobile ui ux',
+    cashback:'cashback reward loyalty back earn migros coop sbb',
+    travel:'travel fx airport lounge abroad international zero-fx zurich geneva',
+    students:'student university felix young genz convert tertiary',
+    family:'family household anna sandra migros grocery partner kids',
+    trust:'trust security privacy peter biometric data retired senior',
+  };
+  const map={};
+  Object.entries(seeds).forEach(([k,kw])=>{
+    const chipText=CHIP_Q[k]||'';
+    const label=INTENT_LABELS[k]||'';
+    map[k]=expandTokens(`${chipText} ${label} ${kw}`);
+  });
+  return map;
+}
+function buildQDataCorpus(){
+  const map={};
+  Object.keys(PERSONA_DATA).forEach(pk=>{
+    const pd=PERSONA_DATA[pk];
+    (pd.questions||[]).forEach(q=>{
+      const qd=(typeof Q_DATA!=='undefined'&&Q_DATA[q.key])||null;
+      const plainHl=(qd?.hl||'').replace(/<[^>]+>/g,' ');
+      const plainPd=qd?.pd||'';
+      const text=`${q.label} ${q.text} ${pd.segment} ${pd.display_name} ${plainHl} ${plainPd}`;
+      map[q.key]={tokens:expandTokens(text),persona:pk,label:q.label,questionText:q.text};
+    });
+  });
+  return map;
+}
+function buildInsightCorpus(){
+  // 25 (persona × category) blocks — finding + key consumer quote + tags + persona meta
+  const map={};
+  Object.entries(PERSONA_INSIGHTS).forEach(([pk,pdata])=>{
+    const pd=PERSONA_DATA[pk]||{};
+    Object.entries(pdata.insights).forEach(([cat,ins])=>{
+      const tags=(ins.tags||[]).join(' ');
+      const text=`${ins.finding} ${ins.quote} ${tags} ${pd.segment||''} ${pd.display_name||''} ${cat.replace(/_/g,' ')} ${pdata.metrics.top_feature||''}`;
+      map[`${pk}:${cat}`]={
+        tokens:expandTokens(text), persona:pk, category:cat,
+        categoryIdx:CAT_NAME_TO_IDX[cat], finding:ins.finding, quote:ins.quote, tags:ins.tags||[],
+      };
+    });
+  });
+  return map;
+}
+function ensureCorpora(){if(!INTENT_CORPUS)INTENT_CORPUS=buildIntentCorpus();if(!QDATA_CORPUS)QDATA_CORPUS=buildQDataCorpus();if(!INSIGHT_CORPUS)INSIGHT_CORPUS=buildInsightCorpus();}
+
+function synthesizeRoute(userQ,opts={}){
+  ensureCorpora();
+  const personaFilter=opts.personaFilter||null;
+  const categoryFilter=(opts.categoryFilter!==undefined&&opts.categoryFilter!==null)?opts.categoryFilter:null;
+  const inCategoryKeys=opts.inCategoryKeys||null;     // boost in-category intents
+  const qToks=expandTokens(userQ);
+  let bestIntent=null,bestIntentScore=0;
+  if(!personaFilter){
+    Object.entries(INTENT_CORPUS).forEach(([k,toks])=>{
+      let s=scoreOverlap(qToks,toks);
+      if(inCategoryKeys && inCategoryKeys.includes(k)) s+=0.12;     // category boost
+      if(s>bestIntentScore){bestIntent=k;bestIntentScore=s;}
+    });
+  }
+  let bestQ=null,bestQScore=0;
+  Object.entries(QDATA_CORPUS).forEach(([k,info])=>{
+    if(personaFilter && info.persona!==personaFilter) return;
+    if(categoryFilter!==null && Q_CAT[k]!==categoryFilter) return;
+    const s=scoreOverlap(qToks,info.tokens);
+    if(s>bestQScore){bestQ=k;bestQScore=s;}
+  });
+  // Fallback layer: 25 persona-category insight blocks from the Git insights_report.
+  // Always returns the closest match (even zero-overlap) so any in-scope query
+  // gets a grounded answer rather than dead-ending.
+  let bestInsight=null,bestInsightScore=-1;
+  Object.entries(INSIGHT_CORPUS).forEach(([k,info])=>{
+    if(personaFilter && info.persona!==personaFilter) return;
+    if(categoryFilter!==null && info.categoryIdx!==categoryFilter) return;
+    const s=scoreOverlap(qToks,info.tokens);
+    if(s>bestInsightScore){bestInsight=k;bestInsightScore=s;}
+  });
+  if(bestInsightScore<0) bestInsightScore=0;
+  return {bestIntent,bestIntentScore,bestQ,bestQScore,
+          personaOfBestQ:bestQ?QDATA_CORPUS[bestQ].persona:null,
+          labelOfBestQ:bestQ?QDATA_CORPUS[bestQ].label:null,
+          bestInsight,bestInsightScore,
+          insightInfo:bestInsight?INSIGHT_CORPUS[bestInsight]:null};
+}
+
+/* Render a grounded fallback chat reply when no Q_DATA / intent matches —
+   uses the closest persona×category insight block as evidence.        */
+function renderInsightFallback(info,score){
+  if(!info) return '';
+  const pd=PERSONA_DATA[info.persona]||{};
+  const rec=PERSONA_INSIGHTS[info.persona]?.recommendation||{};
+  const met=PERSONA_INSIGHTS[info.persona]?.metrics||{};
+  const pct=Math.max(1,Math.round(score*100));
+  const catLabel=CAT_PRETTY[info.category]||info.category;
+  const tagsHtml=(info.tags||[]).map(t=>`<span style="display:inline-block;padding:2px 8px;margin:2px 4px 2px 0;background:#EEF2FF;color:#3730A3;border-radius:10px;font-size:11px">${escapeHtml(t)}</span>`).join('');
+  const avoidTxt=(rec.avoid||[]).join(', ')||'—';
+  return `<div style="border-left:3px solid #1A56DB;padding:10px 12px;margin:6px 0;background:#F8FAFC;border-radius:6px;font-size:13px;line-height:1.5">
+    <div style="font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Closest research signal · ${pct}% topic overlap</div>
+    <div><strong>${escapeHtml(pd.display_name||info.persona)}</strong> — ${escapeHtml(pd.segment||'')} · <em>${escapeHtml(catLabel)}</em></div>
+    <blockquote style="margin:8px 0;padding:6px 10px;border-left:2px solid #94A3B8;color:#334155;font-style:italic">"${escapeHtml(info.quote)}"</blockquote>
+    <div style="margin:4px 0"><strong>Finding:</strong> ${escapeHtml(info.finding)}</div>
+    <div style="margin:4px 0">${tagsHtml}</div>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #CBD5E1;font-size:12px">
+      <div><strong>Visa product for this segment:</strong> ${escapeHtml(rec.viable||'—')}</div>
+      <div><strong>Acquisition trigger:</strong> ${escapeHtml(rec.trigger||'—')} · <strong>Avoid:</strong> ${escapeHtml(avoidTxt)}</div>
+      <div><strong>Fee ceiling:</strong> ${escapeHtml(met.max_fee||'—')} · <strong>Top feature:</strong> ${escapeHtml(met.top_feature||'—')}</div>
+    </div>
+  </div>`;
+}
+
+/* One-shot overrides consumed by simulateData() — let the synthesizer
+   pin a specific intent or persona for the next query WITHOUT mutating
+   the user's global UI state (SELECTED_PERSONA stays as-is).        */
+let _FORCE_INTENT=null;
+let _OVERRIDE_PERSONA=null;
+
+function submitChatQuery(){
+  const input=document.getElementById('q-input');
+  const q=input.value.trim();
+  if(!q) return;
+  addUserMessage(q);
+  input.value='';
+  routeUserQuestion(q);
+}
+
+function routeUserQuestion(q){
+  /* ── Mode A: persona focus active — scan only that persona's Qs, optionally narrowed to a topic ── */
+  if(SELECTED_PERSONA && PERSONA_DATA[SELECTED_PERSONA]){
+    const pd=PERSONA_DATA[SELECTED_PERSONA];
+    const firstName=pd.display_name.split(' ')[0];
+    const catScope=(SELECTED_CATEGORY!==null)?SELECTED_CATEGORY:null;
+    const scopedQs=pd.questions.filter(x=>catScope===null||Q_CAT[x.key]===catScope);
+    const scopeNote=catScope===null
+      ? `all ${pd.questions.length} of ${escapeHtml(firstName)}'s research areas`
+      : `${scopedQs.length} ${escapeHtml(MARKET_QUESTIONS[catScope].cat.replace(/^\S+\s/,'').toLowerCase())} research area${scopedQs.length>1?'s':''} for ${escapeHtml(firstName)}`;
+    const {bestQ,bestQScore}=synthesizeRoute(q,{personaFilter:SELECTED_PERSONA,categoryFilter:catScope});
+    if(bestQ && bestQScore>0.04){
+      const matched=pd.questions.find(x=>x.key===bestQ);
+      const pct=Math.round(bestQScore*100);
+      CURRENT_PERSONA_Q_KEY=bestQ;
+      addBotMessage(`I read your question and scanned ${scopeNote}. Closest match: <strong>"${escapeHtml(matched.label)}"</strong> (${pct}% topic overlap). Synthesising the full persona response — headline, why-cards, adoption curve, recommendation and risk…`);
+      showIntentBadge(bestQ);
+      setTimeout(()=>runQuery(q),180);
+      return;
+    }
+    // No specific Q_DATA matched → fall back to the persona×category insight matrix.
+    // Always answer with the closest signal from our research files.
+    const fb=synthesizeRoute(q,{personaFilter:SELECTED_PERSONA,categoryFilter:catScope});
+    CURRENT_PERSONA_Q_KEY=null;
+    if(fb.insightInfo){
+      addBotMessage(`No precise Q&A in ${escapeHtml(firstName)}'s library on that, but our categorical research gives a clear signal:${renderInsightFallback(fb.insightInfo,fb.bestInsightScore)}I'll run the full pipeline now with ${escapeHtml(firstName)} as the lens…`);
+      _OVERRIDE_PERSONA=SELECTED_PERSONA;
+      showIntentBadge(null,`fallback: ${SELECTED_PERSONA} · ${fb.insightInfo.category}`);
+      setTimeout(()=>runQuery(q),180);
+      return;
+    }
+    const scopeLabel=catScope===null?'':` on <em>${escapeHtml(MARKET_QUESTIONS[catScope].cat.replace(/^\S+\s/,'').toLowerCase())}</em>`;
+    addBotMessage(`I couldn't find any research signal in ${escapeHtml(firstName)}'s library${scopeLabel}. Here are the ${scopedQs.length} area${scopedQs.length>1?'s':''} I <em>can</em> answer — tap one, or try rephrasing:`);
+    let sug='';
+    scopedQs.forEach(it=>{
+      sug+=`<button class="chat-question" onclick="firePersonaChip(this,'${pd.key}','${it.key}')">
+        <span class="cq-icon">${it.icon}</span>
+        <span><strong>${escapeHtml(it.label)}</strong>${escapeHtml(it.text)}</span></button>`;
+    });
+    if(catScope!==null) sug+=`<button class="chat-back-btn" onclick="selectCategory(null)">← Back to ${escapeHtml(firstName)}'s topics</button>`;
+    addBotSuggestions(sug);
+    return;
+  }
+
+  /* ── Mode B: a topic category is selected (overall, no persona) ── */
+  if(SELECTED_CATEGORY!==null){
+    const cat=MARKET_QUESTIONS[SELECTED_CATEGORY];
+    const emoji=cat.cat.split(' ')[0];
+    const name=cat.cat.substring(emoji.length).trim();
+    const inCatKeys=cat.items.map(x=>x.key);
+    const r=synthesizeRoute(q,{inCategoryKeys:inCatKeys,categoryFilter:SELECTED_CATEGORY});
+    const intentWins = r.bestIntent && r.bestIntentScore>0.04 && r.bestIntentScore>=r.bestQScore-0.08;
+    const qWins      = r.bestQ      && r.bestQScore>0.04;
+
+    if(intentWins){
+      const ic=cat.items.find(x=>x.key===r.bestIntent);
+      const label=ic?ic.label:(INTENT_LABELS[r.bestIntent]||r.bestIntent);
+      const pct=Math.round(r.bestIntentScore*100);
+      const inThisCat=inCatKeys.includes(r.bestIntent);
+      addBotMessage(`I read your question and matched it most strongly to <strong>${escapeHtml(label)}</strong>${inThisCat?` (in your selected <em>${escapeHtml(name)}</em> topic)`:` — this is best handled outside <em>${escapeHtml(name)}</em>, so I'll switch context`} — ${pct}% topic overlap. Dispatching to the 9-agent pipeline now, synthesising across all 5 personas…`);
+      CURRENT_PERSONA_Q_KEY=null;
+      _FORCE_INTENT=r.bestIntent;   // one-shot — bypass the keyword classifier
+      showIntentBadge(r.bestIntent);
+      setTimeout(()=>runQuery(q),180);
+      return;
+    }
+    if(qWins){
+      const pd=PERSONA_DATA[r.personaOfBestQ];
+      const matched=pd.questions.find(x=>x.key===r.bestQ);
+      const pct=Math.round(r.bestQScore*100);
+      addBotMessage(`Your question best matches our deep-dive research on <strong>${escapeHtml(pd.display_name)}</strong> (${escapeHtml(pd.segment)}, ${pct}% overlap) — specifically "${escapeHtml(matched.label)}". I'll focus the answer on this persona's simulated responses…`);
+      CURRENT_PERSONA_Q_KEY=r.bestQ;
+      _OVERRIDE_PERSONA=r.personaOfBestQ;     // one-shot — doesn't change SELECTED_PERSONA
+      showIntentBadge(r.bestQ);
+      setTimeout(()=>runQuery(q),180);
+      return;
+    }
+    // Neither intent nor Q_DATA matched → fall back to the insight matrix
+    // scoped to the selected category (any persona allowed).
+    if(r.insightInfo){
+      const fbPersona=r.insightInfo.persona;
+      const fbPd=PERSONA_DATA[fbPersona];
+      addBotMessage(`No precise Q&A in our <strong>${escapeHtml(name)}</strong> library, but our categorical research has a relevant signal:${renderInsightFallback(r.insightInfo,r.bestInsightScore)}Routing to <strong>${escapeHtml(fbPd.display_name)}</strong> for the full pipeline run…`);
+      CURRENT_PERSONA_Q_KEY=null;
+      _OVERRIDE_PERSONA=fbPersona;
+      showIntentBadge(null,`fallback: ${fbPersona} · ${r.insightInfo.category}`);
+      setTimeout(()=>runQuery(q),180);
+      return;
+    }
+    addBotMessage(`I couldn't find any research signal for that. Here's what I <em>can</em> investigate in <strong>${escapeHtml(name)}</strong> — tap one, or try rephrasing:`);
+    let sug='';
+    cat.items.forEach(it=>{
+      sug+=`<button class="chat-question" onclick="fireChip(this,'${it.key}')">
+        <span class="cq-icon">${it.icon}</span>
+        <span><strong>${escapeHtml(it.label)}</strong>${escapeHtml(it.text)}</span></button>`;
+    });
+    sug+=`<button class="chat-back-btn" onclick="selectCategory(null)">← Switch topic</button>`;
+    addBotSuggestions(sug);
+    return;
+  }
+
+  /* ── Mode C: no category, no persona — try synthesizer, fall back to classifier ── */
+  const r=synthesizeRoute(q);
+  if(r.bestIntent && r.bestIntentScore>0.06 && r.bestIntentScore>=r.bestQScore-0.08){
+    const pct=Math.round(r.bestIntentScore*100);
+    const label=INTENT_LABELS[r.bestIntent]?.replace(/^intent:\s*/,'')||r.bestIntent;
+    addBotMessage(`I read your question and matched it to <strong>${escapeHtml(label)}</strong> (${pct}% topic overlap). Running the 9-agent pipeline across all 5 personas…`);
+    CURRENT_PERSONA_Q_KEY=null;
+    _FORCE_INTENT=r.bestIntent;
+    showIntentBadge(r.bestIntent);
+    setTimeout(()=>runQuery(q),180);
+    return;
+  }
+  if(r.bestQ && r.bestQScore>0.06){
+    const pd=PERSONA_DATA[r.personaOfBestQ];
+    const matched=pd.questions.find(x=>x.key===r.bestQ);
+    const pct=Math.round(r.bestQScore*100);
+    addBotMessage(`I read your question and matched it to our research on <strong>${escapeHtml(pd.display_name)}</strong> (${pct}% overlap) — specifically "${escapeHtml(matched.label)}". Synthesising the full persona response…`);
+    CURRENT_PERSONA_Q_KEY=r.bestQ;
+    _OVERRIDE_PERSONA=r.personaOfBestQ;
+    showIntentBadge(r.bestQ);
+    setTimeout(()=>runQuery(q),180);
+    return;
+  }
+  // Truly free-form: surface the closest persona×category insight as
+  // grounding evidence, then route the pipeline through that persona so
+  // the right-panel response is anchored in our actual research files.
+  if(r.insightInfo){
+    const fbPersona=r.insightInfo.persona;
+    const fbPd=PERSONA_DATA[fbPersona];
+    addBotMessage(`Your question doesn't map cleanly to one of our 50 deep-dive Q&As or 11 market topics, but our 25 categorical insight blocks have a relevant signal:${renderInsightFallback(r.insightInfo,r.bestInsightScore)}Routing the full pipeline through <strong>${escapeHtml(fbPd.display_name)}</strong> (${escapeHtml(fbPd.segment)}) — the persona whose research most closely matches…`);
+    CURRENT_PERSONA_Q_KEY=null;
+    _OVERRIDE_PERSONA=fbPersona;
+    showIntentBadge(null,`fallback: ${fbPersona} · ${r.insightInfo.category}`);
+    setTimeout(()=>runQuery(q),180);
+    return;
+  }
+  // Absolute last resort — let the classifier in simulateData handle it
+  addBotMessage(`Got it — running the 9-agent pipeline now. I'll synthesise findings across all 5 personas…`);
+  CURRENT_PERSONA_Q_KEY=null;
+  showIntentBadge(null,'custom query');
+  setTimeout(()=>runQuery(q),180);
+}
+
+function fireChip(el,intentKey){
+  const q=CHIP_Q[intentKey];
+  CURRENT_PERSONA_Q_KEY=null;
+  addUserMessage(q);
+  addBotMessage(`On it — dispatching to the Orchestrator and simulating across 5 personas…`);
+  document.getElementById('q-input').value='';
+  showIntentBadge(intentKey);
+  setTimeout(()=>runQuery(q),180);
+}
+
+function firePersonaChip(el,pKey,qKey){
+  const pd=PERSONA_DATA[pKey];
+  const qObj=pd?.questions.find(q=>q.key===qKey);
+  CURRENT_PERSONA_Q_KEY=qKey;
+  const qText=qObj?.text||'';
+  addUserMessage(qText);
+  addBotMessage(`Running ${escapeHtml(pd.display_name.split(' ')[0])}'s Persona Agent for "<strong>${escapeHtml(qObj?.label||'')}</strong>"…`);
+  document.getElementById('q-input').value='';
+  showIntentBadge(null,`persona: ${pd?.display_name?.split(' ')[0]?.toLowerCase()} · ${qObj?.label?.toLowerCase()}`);
+  setTimeout(()=>runQuery(qText),180);
+}
+
+function showIntentBadge(key,custom){
+  const badge=document.getElementById('intent-badge');
+  const wrap=document.getElementById('intent-display');
+  const label=custom||(key&&INTENT_LABELS[key]);
+  if(label){badge.textContent='⚙ '+label;wrap.style.display='block';}
+  else wrap.style.display='none';
+}
+
+/* ─── QUERY ──────────────────────────────────────────────── */
+let CURRENT_ABORT=null;
+async function runQuery(qOverride){
+  const q=(qOverride||document.getElementById('q-input').value).trim();
+  if(!q)return;
+  const seq=++QUERY_SEQ;
+  if(CURRENT_ABORT){try{CURRENT_ABORT.abort();}catch(e){}}
+  HITL_STATUS='pending';HITL_NOTES_VALUE='';
+  const btn=document.getElementById('run-btn');
+  btn.style.animation='spin 1s linear infinite';btn.textContent='⟳';
+  showLoading(q);
+  let data;
+  try{
+    const ctrl=new AbortController();
+    CURRENT_ABORT=ctrl;
+    const tid=setTimeout(()=>ctrl.abort(),8000);
+    const res=await fetch('/api/studio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q}),signal:ctrl.signal});
+    clearTimeout(tid);
+    if(!res.ok)throw new Error('API '+res.status);
+    data=await res.json();
+    if(!data.headline)throw new Error('Incomplete response');
+  }catch(err){
+    if(seq!==QUERY_SEQ) return; // stale request — drop
+    data=simulateData(q);
+  }
+  if(seq!==QUERY_SEQ) return; // newer query already in flight — drop result
+  CURRENT_DATA=data;
+  btn.style.animation='';btn.textContent='→';
+  renderInsight(CURRENT_DATA);
+  document.getElementById('dl-btn').classList.add('show');
+  const conf=CURRENT_DATA.confidence||CURRENT_DATA.conf;
+  const confTxt=conf?` with <strong>${conf}% confidence</strong>`:'';
+  addBotMessage(`✨ Here are your insights${confTxt} — see the full breakdown on the right.`);
+  addBotMessage(`💾 <strong>Want to save this?</strong> Use the orange <strong>⬇ Export</strong> menu at the top-right — choose <strong>📄 PDF</strong> for a formatted report or <strong>📊 Excel</strong> for a multi-sheet workbook (Summary, Pricing, Quality, Pipeline, Personas, Sources).`);
+  addBotMessage(`🔍 <strong>What would you like to explore next?</strong> Pick another research topic below, drill into a specific persona using the Focus row, or type your own question.`);
+  let sug='';
+  MARKET_QUESTIONS.forEach((cat,idx)=>{
+    const emoji=cat.cat.split(' ')[0];
+    const name=cat.cat.substring(emoji.length).trim();
+    const n=cat.items.length;
+    sug+=`<button class="sug-chip" onclick="selectCategory(${idx})">
+      <span>${emoji}</span>
+      <span><strong>${escapeHtml(name)}</strong> · ${n} question${n>1?'s':''}</span>
+      <span class="sug-arrow">→</span></button>`;
+  });
+  addBotSuggestions(sug);
+}
+
+function showLoading(q){
+  const steps=['Orchestrator: Routing query…','Question_Generator: Building 10 questions across 5 categories…','Persona Agents (5): Simulating Felix · Lukas · Anna · Sandra · Peter — 50 Q&A pairs…','Analyst_Agent: Synthesising verdicts + Visa recommendation…','Insight_Report: Logging enriched report to Langfuse…'];
+  document.getElementById('content-area').innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:350px;">
+    <div class="loader-ring"></div>
+    <div style="font-size:14px;font-weight:600;color:var(--text2)">Running AI pipeline…</div>
+    <div style="display:flex;flex-direction:column;gap:4px;align-items:center" id="load-steps">
+      ${steps.map((s,i)=>`<div class="loader-step" id="ls-${i}">${s}</div>`).join('')}</div>
+    <div style="font-size:11px;color:var(--text4);font-style:italic;max-width:280px;text-align:center">"${q.slice(0,70)}${q.length>70?'…':''}"</div>
+  </div>`;
+  let si=0;const iv=setInterval(()=>{const el=document.getElementById('ls-'+si);if(el)el.classList.add('active');if(++si>=steps.length)clearInterval(iv);},600);
+}
+
+/* ─── RENDER ──────────────────────────────────────────────── */
+function renderInsight(d){
+  PANEL_PERSONAS=d.personas||[];
+  const lf=d.langfuse||DEFAULT_DATA.langfuse;
+  const ca=document.getElementById('content-area');
+  const confColor=d.confidence>=80?'var(--green)':d.confidence>=65?'var(--amber)':'var(--red)';
+  const confBg=d.confidence>=80?'var(--green-bg)':d.confidence>=65?'var(--amber-bg)':'var(--red-bg)';
+
+  let hitlHtml='';
+  if(HITL_STATUS==='approved'){
+    hitlHtml=`<div class="hitl-bar approved"><div class="hitl-icon">✅</div><div class="hitl-text"><div class="hitl-head">Insight Approved — Ready for Action</div><div class="hitl-sub">Logged to Langfuse · Trace ID: <code style="font-family:monospace;font-size:10px">${lf.traceId||'lf-vis-ch-approved'}</code></div></div></div>`;
+  } else {
+    hitlHtml=`<div class="hitl-bar" style="cursor:pointer" onclick="openHITL('review')" title="Click to review this insight"><div class="hitl-icon">🔍</div><div class="hitl-text"><div class="hitl-head">Human-in-the-Loop Review Required</div><div class="hitl-sub">This AI-generated insight requires your approval before being logged to Langfuse and actioned. <span style="color:var(--visa);font-weight:600">Click to review →</span></div></div><div class="hitl-actions"><button class="btn-revise" onclick="event.stopPropagation();openHITL('revise')">✎ Revise</button><button class="btn-approve" onclick="event.stopPropagation();openHITL('approve')">✓ Approve</button></div></div>`;
+  }
+
+  ca.innerHTML=`
+  <div class="insight-bar fade-in">
+    <div class="insight-badge">✦ AI Insight · Visa Switzerland · ${d.personas?.length||5} Personas</div>
+    <button class="new-q-btn" onclick="clearInsight()">＋ New Question</button>
+  </div>
+
+  <div class="q-display fade-in"><span class="q-icon">❓</span><span class="q-text">${escH(d.question)}</span></div>
+
+  <div class="headline-card sec-stagger-1">
+    <div class="headline-main">
+      <div class="headline-label"><span style="font-size:11px">✦</span> Synthesised Insight</div>
+      <div class="headline-text">${d.headline}</div>
+      <div class="meta-bar">
+        <div class="meta-chip"><div class="meta-dot" style="background:#1A56DB"></div><strong>5</strong> personas</div>
+        <div class="meta-chip"><div class="meta-dot" style="background:#10B981"></div><strong>50</strong> Q&A pairs</div>
+        <div class="meta-chip"><div class="meta-dot" style="background:#7C3AED"></div><strong>Langfuse</strong> monitored</div>
+        <div class="meta-chip"><div class="meta-dot" style="background:#F59E0B"></div><strong>Llama 3.3 70B</strong> · watsonx</div>
+      </div>
+    </div>
+    <div class="headline-conf">
+      <div class="conf-lbl">Confidence</div>
+      ${svgGauge(d.confidence,confColor,84,7)}
+      <div class="conf-badge" style="background:${confBg};color:${confColor}">${d.confidence_label}</div>
+      <div class="conf-desc">${d.confidence_desc}</div>
+    </div>
+  </div>
+
+  <div class="sec-wrap sec-stagger-2">
+    <div class="sec-head"><span class="sec-title">KEY INSIGHTS</span><span class="sec-meta">3 key findings</span></div>
+    <div class="why-grid">${d.why_cards.map(c=>`<div class="why-card"><div class="why-icon">${c.icon}</div><div class="why-title">${escH(c.title)}</div><div class="why-body">${escH(c.body)}</div></div>`).join('')}</div>
+  </div>
+
+  <div class="sec-wrap sec-stagger-3">
+    <div class="sec-head"><span class="sec-title">Pricing scenarios</span><span class="sec-meta">${d.scenarios.length} price points</span></div>
+    <div class="carousel-track">${d.scenarios.map((s,i)=>`
+      <div class="scenario-card${s.highlight?' optimal':''}" onclick="selectScenario(this,${i})">
+        <div class="sc-head"><div class="sc-price">${escH(s.label)}</div><div class="sc-tag ${s.highlight?'opt':'std'}">${escH(s.tag)}</div></div>
+        <div class="sc-bar"><div class="sc-bar-fill" style="width:${s.adoption}%;background:${s.highlight?'var(--visa)':'#9CA3AF'}"></div></div>
+        <div class="sc-row"><div class="sc-key">Market adoption</div><div class="sc-val">${s.adoption}%</div></div>
+        <div class="sc-row"><div class="sc-key">Acceptability</div><div class="sc-val">${s.acceptability}%</div></div>
+        <div class="sc-row"><div class="sc-key">vs Twint</div><div class="sc-val">${s.vs_twint}%</div></div>
+        <div class="sc-row"><div class="sc-key">Avg WTP</div><div class="sc-val">CHF ${s.wtp}</div></div>
+        <div class="sc-conf ${s.confidence==='High'?'high':'med'}">● ${s.confidence} confidence</div>
+      </div>`).join('')}</div>
+  </div>
+
+  <div class="sec-wrap sec-stagger-4">
+    <div class="sec-head"><span class="sec-title">Consumer segments</span><span class="sec-meta">Click a persona for detail</span></div>
+    <div class="persona-scroll">${d.personas.map((p,i)=>`
+      <div class="persona-card" onclick="openPersonaPanel(${i})">
+        <div class="p-avatar" style="background:${p.avatar_bg}">${p.initial}</div>
+        <div class="p-name">${escH(p.name)}</div>
+        <div class="p-meta">${p.age} · ${escH(p.segment)} · ${p.population_pct||'—'}%</div>
+        <div class="p-badge" style="color:${p.badge_color};background:${p.badge_bg}">${escH(p.badge)}</div>
+        <div class="p-maxlabel">Max fee: <span>${escH(p.max_price)}</span></div>
+        <div class="dots-wrap">${Array.from({length:p.total_dots||9},(_,j)=>`<div class="dot ${j<(p.dots_on||0)?'on':'off'}"></div>`).join('')}</div>
+        <div class="p-quote">${escH(p.quote)}</div>
+      </div>`).join('')}</div>
+  </div>
+
+  <div class="sec-wrap sec-stagger-5">
+    <div class="sec-head"><span class="sec-title">Quality evaluation</span><span class="sec-meta">4 dimensions · AI self-assessment</span></div>
+    <div class="eval-grid">${d.evaluation.map(e=>`
+      <div class="eval-card">
+        <div class="eval-gauge">${svgGauge(e.pct,e.pct>=80?'#059669':'#D97706',90,7)}</div>
+        <div class="eval-label">${escH(e.label)}</div>
+        <div class="eval-badge ${e.badgeClass||'green'}">${escH(e.badge)}</div>
+        <div class="eval-desc">${escH(e.desc)}</div>
+      </div>`).join('')}</div>
+  </div>
+
+  <!-- LANGFUSE EVALUATION TAB -->
+  <div class="sec-wrap sec-stagger-6" id="langfuse-section">
+    <div class="sec-head"><span class="sec-title">🟣 Langfuse Evaluation</span><button class="lf-open-btn" onclick="window.open('https://cloud.langfuse.com','_blank')">↗ Open in Langfuse</button></div>
+    <div class="lf-header">
+      <div>
+        <div class="lf-logo">LANGFUSE</div>
+        <div class="lf-trace-id">Trace: ${lf.traceId||'lf-vis-ch-'+Math.random().toString(36).slice(2,10)}</div>
+        <div class="lf-meta-row">
+          <span class="lf-meta-pill">Model: ${lf.model||'meta-llama/llama-3-3-70b-instruct'}</span>
+          <span class="lf-meta-pill">Latency: ${(lf.latencyMs||3241).toLocaleString()} ms</span>
+          <span class="lf-meta-pill">Cost: $${(lf.totalCost||0.0028).toFixed(4)}</span>
+        </div>
+      </div>
+      <div class="lf-connected" style="margin-left:auto">● Connected</div>
+    </div>
+
+    <div class="lf-section-title lf-collapsible" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px" onclick="(function(t){var b=t.nextElementSibling;var c=t.querySelector('.lf-chev');var open=b.style.display!=='none';b.style.display=open?'none':'';c.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})(this)">
+      <span class="lf-chev" style="display:inline-block;transition:transform .15s ease;transform:rotate(-90deg);color:var(--text3);font-size:10px">▼</span>
+      Per-Persona Trace Breakdown
+      <span style="font-weight:400;color:var(--text3);font-size:11px;margin-left:auto">${(lf.perPersona||DEFAULT_DATA.langfuse.perPersona).length} agents</span>
+    </div>
+    <div style="display:none">${(()=>{
+      const rows=(lf.perPersona&&lf.perPersona.length?lf.perPersona:DEFAULT_DATA.langfuse.perPersona)||[];
+      if(!rows.length)return '<div style="padding:14px;color:var(--text3);font-size:12px;font-style:italic">No persona traces recorded for this run.</div>';
+      const maxLat=Math.max(1,...rows.map(p=>p.latencyMs||0));
+      const sumLat=rows.reduce((a,p)=>a+(p.latencyMs||0),0);
+      const sumIn=rows.reduce((a,p)=>a+(p.inTokens||0),0);
+      const sumOut=rows.reduce((a,p)=>a+(p.outTokens||0),0);
+      const sumCost=rows.reduce((a,p)=>a+(p.cost||0),0);
+      const avgRag=rows.reduce((a,p)=>a+(p.ragHit||0),0)/Math.max(rows.length,1);
+      const ragTot=rows[0]?.ragTotal||12;
+      const vdMix={ACCEPT:0,MAYBE:0,REJECT:0};
+      rows.forEach(p=>{if(vdMix[p.verdict]!==undefined)vdMix[p.verdict]++;});
+      const vdColor=v=>v==='ACCEPT'?'#059669':v==='MAYBE'?'#D97706':'#DC2626';
+      const vdBg   =v=>v==='ACCEPT'?'#D1FAE5':v==='MAYBE'?'#FEF3C7':'#FEE2E2';
+      return `<table class="lf-trace-table">
+        <thead><tr>
+          <th>Persona</th><th>Status</th><th>Latency</th><th>Tokens (in/out)</th><th>Cost</th><th>Context (RAG)</th><th>Analyst verdict</th>
+        </tr></thead>
+        <tbody>${rows.map(p=>{
+          const lat=p.latencyMs||0;
+          const latPct=Math.round((lat/maxLat)*100);
+          const rh=p.ragHit||0, rt=p.ragTotal||12, rPct=Math.round((rh/rt)*100);
+          return `<tr>
+            <td style="padding:8px 10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:8px;height:8px;border-radius:50%;background:${p.avatar||'#64748B'};flex-shrink:0"></span>
+                <div><div style="font-weight:600">${escH(p.name)}</div><div style="font-size:10px;color:var(--text3)">${escH(p.segment)}</div></div>
+              </div>
+            </td>
+            <td><span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#059669"><span style="width:6px;height:6px;border-radius:50%;background:#10B981;box-shadow:0 0 0 3px #D1FAE5"></span>${p.status==='completed'?'Completed':escH(p.status)}</span></td>
+            <td>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600">${lat} ms</div>
+              <div style="height:3px;width:60px;background:#E5E7EB;border-radius:2px;margin-top:3px"><div style="height:100%;width:${latPct}%;background:${lat<600?'#10B981':lat<800?'#F59E0B':'#EF4444'};border-radius:2px"></div></div>
+            </td>
+            <td style="font-family:'IBM Plex Mono',monospace;font-size:11px">
+              <span style="color:#1E40AF">${(p.inTokens||0).toLocaleString()}</span> / <span style="color:#7C3AED">${(p.outTokens||0).toLocaleString()}</span>
+            </td>
+            <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600">$${(p.cost||0).toFixed(5)}</td>
+            <td>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600">${rh}/${rt} chunks</div>
+              <div style="height:3px;width:60px;background:#E5E7EB;border-radius:2px;margin-top:3px"><div style="height:100%;width:${rPct}%;background:#7C3AED;border-radius:2px"></div></div>
+            </td>
+            <td>
+              <span style="background:${vdBg(p.verdict)};color:${vdColor(p.verdict)};font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">${escH(p.verdict)}</span>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px;font-style:italic">${escH(p.reasoning||'')}</div>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+        <tfoot><tr style="background:#F8FAFC;border-top:2px solid #E2E8F0">
+          <td style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--text2)">Totals · ${rows.length} agents</td>
+          <td style="font-size:11px;color:var(--text3)">${rows.filter(p=>p.status==='completed').length}/${rows.length} ok</td>
+          <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700">${sumLat.toLocaleString()} ms</td>
+          <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700"><span style="color:#1E40AF">${sumIn.toLocaleString()}</span> / <span style="color:#7C3AED">${sumOut.toLocaleString()}</span></td>
+          <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700">$${sumCost.toFixed(5)}</td>
+          <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700">avg ${avgRag.toFixed(1)}/${ragTot}</td>
+          <td>
+            <span style="font-size:10px"><span style="color:#059669;font-weight:700">${vdMix.ACCEPT} ACCEPT</span> · <span style="color:#D97706;font-weight:700">${vdMix.MAYBE} MAYBE</span> · <span style="color:#DC2626;font-weight:700">${vdMix.REJECT} REJECT</span></span>
+          </td>
+        </tr></tfoot>
+      </table>`;
+    })()}</div>
+
+    <div class="lf-token-row">
+      <div class="lf-token-card">
+        <div class="lf-token-label">Prompt Tokens</div>
+        <div class="lf-token-val">${(lf.promptTokens||3847).toLocaleString()}</div>
+        <div class="lf-token-sub">Input context</div>
+      </div>
+      <div class="lf-token-card">
+        <div class="lf-token-label">Completion Tokens</div>
+        <div class="lf-token-val">${(lf.completionTokens||1124).toLocaleString()}</div>
+        <div class="lf-token-sub">Generated output</div>
+      </div>
+      <div class="lf-token-card">
+        <div class="lf-token-label">Total Cost</div>
+        <div class="lf-token-val">$${(lf.totalCost||0.0028).toFixed(4)}</div>
+        <div class="lf-token-sub">Llama 3.3 70B pricing</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-wrap sec-stagger-7">
+    <div class="sec-head"><span class="sec-title">Human-in-the-Loop</span><span class="s-chip ${HITL_STATUS==='approved'?'s-approved':'s-pending'}">${HITL_STATUS==='approved'?'✓ Approved':'⏳ Pending'}</span></div>
+    ${hitlHtml}
+  </div>
+
+  <div class="sec-wrap sec-stagger-7">
+    <div class="sec-head" style="cursor:pointer;user-select:none" onclick="(function(t){var b=t.nextElementSibling;var c=t.querySelector('.sec-chev');var open=b.style.display!=='none';b.style.display=open?'none':'';c.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})(this)">
+      <span class="sec-chev" style="display:inline-block;transition:transform .15s ease;transform:rotate(-90deg);color:var(--text3);font-size:9px;margin-right:6px">▼</span>
+      <span class="sec-title">Evidence sources</span>
+      <span class="sec-meta" style="margin-left:auto">${d.evidence.length} sources</span>
+    </div>
+    <div class="ev-wrap" style="display:none">${d.evidence.map(e=>`<div class="ev-pill"><div class="ev-dot" style="background:${e.color}"></div>${escH(e.label)}</div>`).join('')}</div>
+  </div>
+
+  <div class="sec-wrap sec-stagger-7">
+    <div class="sec-head" style="cursor:pointer;user-select:none" onclick="(function(t){var b=t.nextElementSibling;var c=t.querySelector('.sec-chev');var open=b.style.display!=='none';b.style.display=open?'none':'';c.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})(this)">
+      <span class="sec-chev" style="display:inline-block;transition:transform .15s ease;transform:rotate(-90deg);color:var(--text3);font-size:9px;margin-right:6px">▼</span>
+      <span class="sec-title">Agent pipeline trace</span>
+      <span class="sec-meta" style="margin-left:auto">${d.pipeline.length} agents</span>
+    </div>
+    <div class="pipeline-trace" style="display:none">${d.pipeline.map((p,i)=>`
+      <div class="pt-line" style="color:#3FB950">
+        <div class="pt-dot"></div>
+        <span style="color:#7EE787">[${String(i+1).padStart(2,'0')}]</span>
+        <span style="font-weight:700">${escH(p.label)}</span>
+        <span style="color:#8B949E">→ ${escH(p.detail)}</span>
+      </div>`).join('')}
+      <div class="pt-line" style="color:#58A6FF;margin-top:6px;padding-top:6px;border-top:1px solid #21262D">
+        <div class="pt-dot"></div>
+        <span style="font-weight:700">✦ Orchestrator</span>
+        <span style="color:#8B949E">→ Pipeline complete · ${d.pipeline.length} agents · Langfuse logged · Insight ready</span>
+      </div>
+    </div>
+    <div class="risk-flag"><div class="risk-icon">⚠️</div><div class="risk-text"><strong>Risk flag:</strong> ${escH(d.recommendation?.risk||'')}</div></div>
+  </div>
+  <div style="height:40px;flex-shrink:0"></div>`;
+
+  renderRightPanel(d);
+  updateTimestamp();
+}
+
+/* ─── RIGHT PANEL ─────────────────────────────────────────── */
+function renderRightPanel(d){
+  const TABS=[
+    {icon:'💡',label:'KEY INSIGHTS'},
+    {icon:'💬',label:'Consumer reactions'},
+    {icon:'⇄',label:'Compare scenarios'},
+    {icon:'⭐',label:'Recommendations'},
+    {icon:'📄',label:'Evidence'},
+    {icon:'🟣',label:'Langfuse Eval'},
+  ];
+  document.getElementById('rp-tabs-list').innerHTML=TABS.map((t,i)=>`
+    <div class="rp-tab-item ${i===ACTIVE_TAB?'active':''}" onclick="setTab(${i})">
+      ${i===ACTIVE_TAB?'':'<span class="rp-tab-icon" style="width:3px;flex-shrink:0"></span>'}
+      <span class="rp-tab-icon">${t.icon}</span>${t.label}
+    </div>`).join('');
+  document.getElementById('rp-rec-card').innerHTML=`
+    <div class="rec-card">
+      <div class="rec-card-head"><div class="rec-card-label">✦ Recommended Visa Move</div><div class="rec-card-title">${escH(d.recommendation?.headline||'')}</div></div>
+      <div class="rec-card-body">${(d.recommendation?.items||[]).map(item=>`<div class="rec-item"><span class="rec-check">✓</span><span>${escH(item)}</span></div>`).join('')}</div>
+    </div>
+    <div class="rec-tier"><div class="tier-badge">${d.recommendation?.tier||'A'}</div><div class="tier-text">Tier ${d.recommendation?.tier||'A'} Recommendation<br>High strategic priority</div></div>
+    <div class="visa-card-visual">
+      <div class="vc-chip"></div>
+      <div class="vc-net"><div class="vc-circle vc-c1"></div><div class="vc-circle vc-c2"></div></div>
+      <div class="vc-num">•••• •••• •••• ••••</div>
+      <div class="vc-txt">VISA</div>
+    </div>`;
+  document.getElementById('rp-ts').textContent=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+
+function setTab(idx){
+  ACTIVE_TAB=idx;
+  if(CURRENT_DATA)renderRightPanel(CURRENT_DATA);
+  const anchors=['.why-grid','.persona-scroll','.carousel-track','.hitl-bar','.ev-wrap','#langfuse-section'];
+  const el=document.querySelector(anchors[idx]);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ─── PERSONA PANEL ───────────────────────────────────────── */
+function openPersonaPanel(idx){
+  const p=PANEL_PERSONAS[idx];if(!p)return;
+  const pd=PERSONA_DATA[p.key];
+  document.getElementById('pp-avatar').textContent=p.initial;
+  document.getElementById('pp-avatar').style.background=p.avatar_bg||'#6B7280';
+  document.getElementById('pp-name').textContent=p.name;
+  document.getElementById('pp-sub').textContent=`${p.age} years old · ${p.segment}`;
+  const adoptionPct=Math.round((p.dots_on/p.total_dots)*100);
+  const qs=pd?.questions||[];
+  document.getElementById('pp-body').innerHTML=`
+    <div>
+      <div class="pp-section">Adoption Signal at CHF 8/month</div>
+      <div class="pp-stat"><div class="pp-stat-label">Adoption probability</div><div class="pp-stat-value" style="color:var(--visa)">${adoptionPct}%</div></div>
+      <div class="pp-adoption-bar"><div class="pp-adoption-fill" style="width:${adoptionPct}%"></div></div>
+    </div>
+    <div>
+      <div class="pp-section">Profile</div>
+      <div class="pp-stat"><div class="pp-stat-label">Max monthly fee</div><div class="pp-stat-value">${escH(p.max_price)}</div></div>
+      <div class="pp-stat"><div class="pp-stat-label">Population share</div><div class="pp-stat-value">${p.population_pct||'—'}%</div></div>
+      ${pd?`<div class="pp-stat"><div class="pp-stat-label">Income</div><div class="pp-stat-value">${escH(pd.income)}</div></div>`:''}
+      ${pd?`<div class="pp-stat"><div class="pp-stat-label">City</div><div class="pp-stat-value">${escH(pd.city)}</div></div>`:''}
+      ${pd?`<div class="pp-stat"><div class="pp-stat-label">Twint switch probability</div><div class="pp-stat-value">${pd.twint_switch}%</div></div>`:''}
+    </div>
+    <div class="pp-quote-box">"${escH(p.quote)}"</div>
+    ${pd?`<div>
+      <div class="pp-section">Key driver</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">${escH(pd.key_driver)}</div>
+    </div>`:''}
+    ${qs.length?`<div>
+      <div class="pp-section">10 Research Questions</div>
+      ${qs.map(q=>`<div class="pp-q-item" onclick="document.getElementById('q-input').value='${escH(q.text).replace(/'/g,"\\'")}';closePersonaPanel();runQuery();">
+        <span class="pp-q-icon">${q.icon}</span>
+        <div><strong style="font-size:10px;color:var(--visa);display:block">${escH(q.label)}</strong>${escH(q.text)}</div>
+      </div>`).join('')}
+    </div>`:''}`;
+  document.getElementById('persona-panel-bg').classList.remove('hidden');
+}
+
+function closePersonaPanel(e){
+  if(!e||e.target===document.getElementById('persona-panel-bg'))
+    document.getElementById('persona-panel-bg').classList.add('hidden');
+}
+
+/* ─── HITL ───────────────────────────────────────────────── */
+function openHITL(action){
+  if(!CURRENT_DATA)return;
+  document.getElementById('hitl-preview-text').textContent=CURRENT_DATA.headline.replace(/<[^>]*>/g,'');
+  document.getElementById('hitl-notes').value=HITL_NOTES_VALUE;
+  document.getElementById('hitl-modal').classList.remove('hidden');
+  if(action==='approve') setTimeout(()=>approveHITL(),0);
+}
+function closeHITL(){document.getElementById('hitl-modal').classList.add('hidden');}
+function approveHITL(){
+  HITL_STATUS='approved';HITL_NOTES_VALUE=document.getElementById('hitl-notes').value;
+  closeHITL();if(CURRENT_DATA)renderInsight(CURRENT_DATA);
+}
+
+/* ─── DOWNLOAD INSIGHT — PDF via jsPDF ───────────────────── */
+function downloadInsight(format){
+  if(!CURRENT_DATA)return;
+  if(format==='xlsx')return downloadInsightXlsx();
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const d=CURRENT_DATA;
+  /* Strip HTML, decode entities, AND remove unicode chars helvetica can't
+     render (emoji, smart quotes, dashes) so we don't get "Ø=Üñ" mojibake. */
+  const strip=s=>(s||'').replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/[\u2013\u2014]/g,'-').replace(/\u2192/g,'->').replace(/[^\x00-\x7F]/g,'').replace(/\s{2,}/g,' ').trim();
+  const ts=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const W=210,PX=14,MAXW=W-PX*2;
+  let y=0;
+
+  /* ── helpers ── */
+  const nl=n=>{y+=(n||7);};
+  const rule=(col,thickness)=>{doc.setDrawColor(...col);doc.setLineWidth(thickness||0.4);doc.line(PX,y,W-PX,y);nl(1);};
+  const txt=(s,size,bold,col)=>{doc.setFontSize(size||10);doc.setFont('helvetica',bold?'bold':'normal');doc.setTextColor(...(col||[30,30,30]));return s;};
+  const pr=(s,size,bold,col,indent)=>{const x=PX+(indent||0);const lines=doc.splitTextToSize(strip(s),MAXW-(indent||0));doc.setFontSize(size||10);doc.setFont('helvetica',bold?'bold':'normal');doc.setTextColor(...(col||[30,30,30]));doc.text(lines,x,y);nl(lines.length*(size||10)*0.42+1.5);};
+  const newPage=()=>{doc.addPage();y=18;};
+  const chk=needed=>{if(y+needed>272)newPage();};
+
+  /* ── cover strip ── */
+  doc.setFillColor(26,86,219);doc.rect(0,0,W,28,'F');
+  doc.setFillColor(15,52,139);doc.rect(0,26,W,2,'F');
+  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text('Visa Insight Studio',PX,12);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(180,204,255);
+  doc.text('IBM watsonx Orchestrate · Group 29 · HSLU MSc Agentic AI 2025',PX,19);
+  doc.text('Generated: '+ts,W-PX,19,{align:'right'});
+  y=36;
+
+  /* ── question ── */
+  pr(d.question||'Visa Switzerland market insight',13,true,[26,86,219]);
+  nl(-2);
+  rule([180,204,255],0.6);
+  nl(1);
+
+  /* ── headline ── */
+  chk(22);
+  pr('HEADLINE FINDING',7,true,[120,130,150]);nl(-3);
+  pr(d.headline,11,false,[20,20,20]);
+  nl(2);
+
+  /* ── confidence bar ── */
+  chk(18);
+  pr('CONFIDENCE',7,true,[120,130,150]);nl(-2);
+  const conf=d.confidence||80;
+  doc.setFillColor(230,236,255);doc.rect(PX,y,MAXW,5,'F');
+  doc.setFillColor(26,86,219);doc.rect(PX,y,MAXW*(conf/100),5,'F');
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text(`${conf}%  ${d.confidence_label||''}`,PX+2,y+3.6);
+  nl(7);
+  if(d.confidence_desc){
+    doc.setFontSize(8.5);doc.setFont('helvetica','normal');doc.setTextColor(90,100,120);
+    const cl=doc.splitTextToSize(strip(d.confidence_desc),MAXW);doc.text(cl,PX,y);nl(cl.length*3.8+2);
+  }
+
+  rule([220,225,235]);
+  nl(1);
+
+  /* ── key findings ── */
+  if(d.why_cards?.length){
+    chk(14);
+    pr('KEY FINDINGS',7,true,[120,130,150]);nl(-2);
+    d.why_cards.forEach((c,i)=>{
+      chk(22);
+      doc.setFillColor(245,247,255);doc.rect(PX,y-1,MAXW,c.body?Math.min(28,doc.splitTextToSize(strip(c.body),MAXW-6).length*4.2+10):12,'F');
+      pr(`${i+1}. ${c.title}`,9.5,true,[26,86,219]);nl(-2);
+      if(c.body)pr(c.body,8.5,false,[55,65,80],4);
+      nl(2);
+    });
+    rule([220,225,235]);nl(1);
+  }
+
+  /* ── pricing scenarios ── */
+  if(d.scenarios?.length){
+    chk(12);
+    pr('PRICING SCENARIOS',7,true,[120,130,150]);nl(-1);
+    const cols=[PX,PX+30,PX+58,PX+86,PX+114,PX+142];
+    const hdr=['Price','Adoption','Acceptability','vs Twint','Avg WTP','Confidence'];
+    doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(100,110,130);
+    hdr.forEach((h,i)=>doc.text(h,cols[i],y));nl(4);
+    doc.setLineWidth(0.3);doc.setDrawColor(210,215,225);doc.line(PX,y,W-PX,y);nl(2);
+    d.scenarios.forEach(s=>{
+      chk(8);
+      if(s.highlight){doc.setFillColor(239,246,255);doc.rect(PX-1,y-3,MAXW+2,6.5,'F');}
+      doc.setFontSize(8);doc.setFont('helvetica',s.highlight?'bold':'normal');
+      doc.setTextColor(s.highlight?26:50,s.highlight?86:60,s.highlight?219:80);
+      doc.text(strip(s.label)+(s.highlight?' *':''),cols[0],y);
+      doc.setTextColor(50,60,80);
+      doc.text((s.adoption||0)+'%',cols[1],y);
+      doc.text((s.acceptability||0)+'%',cols[2],y);
+      doc.text((s.vs_twint||0)+'%',cols[3],y);
+      doc.text('CHF '+(s.wtp||0),cols[4],y);
+      doc.text(s.confidence||'',cols[5],y);
+      nl(5.5);
+    });
+    rule([220,225,235]);nl(1);
+  }
+
+  /* ── evaluation scores ── */
+  if(d.evaluation?.length){
+    chk(12);
+    pr('QUALITY EVALUATION',7,true,[120,130,150]);nl(-1);
+    d.evaluation.forEach(e=>{
+      chk(10);
+      doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(50,60,80);
+      doc.text(strip(e.label),PX,y);
+      const barX=PX+36,barW=MAXW-40;
+      doc.setFillColor(230,234,240);doc.rect(barX,y-3.5,barW,4.5,'F');
+      const col=e.badgeClass==='green'?[5,150,105]:e.badgeClass==='amber'?[217,119,6]:[220,38,38];
+      doc.setFillColor(...col);doc.rect(barX,y-3.5,barW*((e.pct||0)/100),4.5,'F');
+      doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...col);
+      doc.text(`${e.pct}%  ${e.badge}`,barX+barW+2,y);
+      nl(6);
+    });
+    rule([220,225,235]);nl(1);
+  }
+
+  /* ── recommendation ── */
+  if(d.recommendation){
+    chk(14);
+    pr('RECOMMENDATION',7,true,[120,130,150]);nl(-2);
+    const rec=d.recommendation;
+    if(rec.tier){
+      const tcol=rec.tier==='A'?[5,150,105]:rec.tier==='B'?[217,119,6]:[100,110,130];
+      doc.setFillColor(...tcol);doc.roundedRect(PX,y-1,14,8,1,1,'F');
+      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      doc.text('Tier '+rec.tier,PX+2,y+4.5);
+      doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(20,20,20);
+      const hl=doc.splitTextToSize(strip(rec.headline),MAXW-18);doc.text(hl,PX+17,y+1.5+(hl.length>1?0:-1));
+      nl(Math.max(10,hl.length*5+2));
+    } else {
+      pr(rec.headline,10,true);
+    }
+    if(rec.items?.length){
+      rec.items.forEach((it,i)=>{
+        chk(10);
+        doc.setFontSize(8.5);doc.setFont('helvetica','normal');doc.setTextColor(50,60,80);
+        const lines=doc.splitTextToSize((i+1)+'. '+strip(it),MAXW-6);
+        doc.text(lines,PX+3,y);nl(lines.length*4+1.5);
+      });
+    }
+    if(rec.risk){
+      chk(14);
+      doc.setFillColor(255,245,240);doc.rect(PX,y-1,MAXW,Math.min(18,doc.splitTextToSize(strip(rec.risk),MAXW-8).length*3.8+8),'F');
+      doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(180,60,20);
+      doc.text('RISK:',PX+2,y+3);
+      doc.setFont('helvetica','normal');doc.setTextColor(100,50,20);
+      const rl=doc.splitTextToSize(strip(rec.risk),MAXW-22);doc.text(rl,PX+22,y+3);
+      nl(rl.length*3.8+7);
+    }
+    rule([220,225,235]);nl(1);
+  }
+
+  /* ── pipeline ── */
+  if(d.pipeline?.length){
+    chk(12);
+    pr('AGENT PIPELINE',7,true,[120,130,150]);nl(-1);
+    d.pipeline.forEach((p,i)=>{
+      chk(9);
+      doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(26,86,219);
+      doc.text(`${i+1}. ${p.label}`,PX,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(80,90,110);
+      const dl=doc.splitTextToSize(strip(p.detail),MAXW-38);doc.text(dl,PX+38,y);
+      nl(Math.max(5,dl.length*4+1));
+    });
+    if(d.pipeline_detail){
+      doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(150,155,165);
+      const pd2=doc.splitTextToSize(strip(d.pipeline_detail),MAXW);doc.text(pd2,PX,y);nl(pd2.length*3.5+2);
+    }
+  }
+
+  /* ── footer on every page ── */
+  const pCount=doc.getNumberOfPages();
+  for(let i=1;i<=pCount;i++){
+    doc.setPage(i);
+    doc.setFillColor(245,247,252);doc.rect(0,287,W,10,'F');
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(140,148,165);
+    doc.text('Visa Insight Studio · Group 29 · HSLU MSc Agentic AI 2025 · Confidential',PX,293);
+    doc.text(`Page ${i} of ${pCount}`,W-PX,293,{align:'right'});
+    doc.setDrawColor(200,208,225);doc.setLineWidth(0.3);doc.line(0,287,W,287);
+  }
+
+  doc.save(`visa-insight-${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+/* ─── DOWNLOAD INSIGHT — Excel via SheetJS ──────────────────
+   Multi-sheet workbook: Summary / Key Findings / Pricing /
+   Quality Eval / Recommendation / Agent Pipeline / Personas /
+   Evidence Sources. Plain-text only (no emoji) so Excel renders
+   cleanly across Mac, Windows and Google Sheets.                 */
+function downloadInsightXlsx(){
+  if(!CURRENT_DATA||!window.XLSX){return;}
+  const d=CURRENT_DATA;
+  const strip=s=>(s==null?'':String(s)).replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/\s{2,}/g,' ').trim();
+  const ts=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const wb=XLSX.utils.book_new();
+  const addSheet=(name,rows,colW)=>{
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    if(colW)ws['!cols']=colW.map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws,name.substring(0,31));
+  };
+
+  /* 1. Summary */
+  addSheet('Summary',[
+    ['Visa Insight Studio — Research Report'],
+    ['IBM watsonx Orchestrate · Group 29 · HSLU MSc Agentic AI 2025'],
+    ['Generated',ts],
+    [],
+    ['Question',strip(d.question||'')],
+    [],
+    ['Headline',strip(d.headline||'')],
+    [],
+    ['Confidence',(d.confidence||0)+'%',strip(d.confidence_label||'')],
+    ['Confidence note',strip(d.confidence_desc||'')],
+    [],
+    ['Personas simulated',d.personas?.length||5],
+    ['Q&A pairs',50],
+    ['Model','Llama 3.3 70B Instruct (watsonx)'],
+    ['Observability','Langfuse monitored'],
+  ],[22,60,20]);
+
+  /* 2. Key Findings */
+  if(d.why_cards?.length){
+    addSheet('Key Findings',[
+      ['#','Finding','Detail'],
+      ...d.why_cards.map((c,i)=>[i+1,strip(c.title),strip(c.body)])
+    ],[5,40,80]);
+  }
+
+  /* 3. Pricing scenarios */
+  if(d.scenarios?.length){
+    addSheet('Pricing Scenarios',[
+      ['Price','Adoption %','Acceptability %','vs Twint %','Avg WTP (CHF)','Confidence','Optimal'],
+      ...d.scenarios.map(s=>[strip(s.label),s.adoption||0,s.acceptability||0,s.vs_twint||0,s.wtp||0,strip(s.confidence||''),s.highlight?'Yes':''])
+    ],[12,12,16,12,16,14,10]);
+  }
+
+  /* 4. Quality Evaluation */
+  if(d.evaluation?.length){
+    addSheet('Quality Evaluation',[
+      ['Dimension','Score %','Badge','Description'],
+      ...d.evaluation.map(e=>[strip(e.label),e.pct||0,strip(e.badge||''),strip(e.desc||'')])
+    ],[20,10,14,70]);
+  }
+
+  /* 5. Recommendation */
+  if(d.recommendation){
+    const rec=d.recommendation;
+    const rows=[
+      ['Recommendation'],
+      ['Tier',rec.tier||''],
+      ['Headline',strip(rec.headline||'')],
+      [],
+      ['#','Action item'],
+      ...(rec.items||[]).map((it,i)=>[i+1,strip(it)]),
+      [],
+      ['Risk flag',strip(rec.risk||'')]
+    ];
+    addSheet('Recommendation',rows,[8,90]);
+  }
+
+  /* 6. Agent Pipeline */
+  if(d.pipeline?.length){
+    addSheet('Agent Pipeline',[
+      ['Step','Agent','Output'],
+      ...d.pipeline.map((p,i)=>[i+1,strip(p.label),strip(p.detail)])
+    ],[6,28,80]);
+  }
+
+  /* 7. Personas (Langfuse trace) */
+  const personas=(d.langfuse&&d.langfuse.perPersona)||[];
+  if(personas.length){
+    addSheet('Personas',[
+      ['Persona','Segment','Status','Latency (ms)','In tokens','Out tokens','Cost (USD)','RAG hit','RAG total','Verdict','Reasoning'],
+      ...personas.map(p=>[strip(p.name),strip(p.segment),strip(p.status||'completed'),p.latencyMs||0,p.inTokens||0,p.outTokens||0,p.cost||0,p.ragHit||0,p.ragTotal||0,strip(p.verdict||''),strip(p.reasoning||'')])
+    ],[16,14,12,12,11,11,11,9,10,12,40]);
+  }
+
+  /* 8. Evidence sources */
+  if(d.evidence?.length){
+    addSheet('Evidence Sources',[
+      ['#','Source'],
+      ...d.evidence.map((e,i)=>[i+1,strip(e.label)])
+    ],[5,80]);
+  }
+
+  XLSX.writeFile(wb,`visa-insight-${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function clearInsight(){
+  HITL_STATUS='pending';HITL_NOTES_VALUE='';CURRENT_DATA=null;
+  document.getElementById('dl-btn').classList.remove('show');
+  document.getElementById('content-area').innerHTML=`<div class="welcome-state"><div class="welcome-icon">✦</div><div class="welcome-h">Ask a market question</div><div class="welcome-p">Type your question in the search box or pick one of the example questions to get decision-ready insights powered by IBM watsonx Orchestrate.</div></div>`;
+  document.getElementById('rp-tabs-list').innerHTML='';document.getElementById('rp-rec-card').innerHTML='';
+}
+
+function selectScenario(el,idx){document.querySelectorAll('.scenario-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');}
+function escH(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ═══════════════════════════════════════════════════════
+   SIMULATION ENGINE — 10 intent branches
+═══════════════════════════════════════════════════════ */
+function simulateData(q){
+  const ql=q.toLowerCase();
+  const is=kws=>kws.some(k=>ql.includes(k));
+  // One-shot overrides from the synthesizer take precedence over keyword classification
+  let intent=_FORCE_INTENT||null; _FORCE_INTENT=null;
+  if(!intent){
+    intent='pricing';
+    if(is(['twint','competitor','compet','rival']))intent='competitor';
+    else if(is(['cashback','reward','loyalt','benefit']))intent='cashback';
+    else if(is(['student','felix','university','gen z']))intent='students';
+    else if(is(['family','household','migros','coop','grocery','anna']))intent='family';
+    else if(is(['travel','airport','lounge','abroad','fx','zero fx','lukas','professional']))intent='travel';
+    else if(is(['trust','security','privacy','biometric','data','peter','retired']))intent='trust';
+    else if(is(['wtp','willing','segment','distribution','demographic']))intent='wtp';
+    else if(is(['feature','mobile','app','digital','ux','sandra','millennial']))intent='features';
+    else if(is(['chf 5','5 franc','budget','entry','cheap']))intent='price_low';
+    else if(is(['chf 12','chf 15','premium','luxury','expensive']))intent='price_high';
+  }
+
+  // One-shot persona override (from synthesizer) — used WITHOUT changing global SELECTED_PERSONA
+  const focusPersona=_OVERRIDE_PERSONA||SELECTED_PERSONA;
+  _OVERRIDE_PERSONA=null;
+  if(focusPersona && PERSONA_DATA[focusPersona]) return _simPersonaFocus(focusPersona,q,CURRENT_PERSONA_Q_KEY);
+  CURRENT_PERSONA_Q_KEY=null;
+  showIntentBadge(intent);
+  const d=deepCopy(DEFAULT_DATA);d.question=q;
+  return ({competitor:_simCompetitor,cashback:_simCashback,students:_simStudents,family:_simFamily,travel:_simTravel,trust:_simTrust,wtp:_simWtp,features:_simFeatures,price_low:_simPriceLow,price_high:_simPriceHigh,pricing:_simPricing}[intent]||_simPricing)(d,q);
+}
+
+function deepCopy(o){return JSON.parse(JSON.stringify(o));}
+
+function _mkLf(traceId,confidence,latency){
+  const base=DEFAULT_DATA.langfuse;
+  return {traceId:traceId||('lf-vis-ch-'+Math.random().toString(36).slice(2,10)),model:base.model,promptTokens:base.promptTokens+Math.floor(Math.random()*300-150),completionTokens:base.completionTokens+Math.floor(Math.random()*200-100),totalCost:+(Math.random()*.003+.001).toFixed(4),latencyMs:latency||Math.floor(Math.random()*2000+2000),scores:[
+    {label:'Confidence',     pct:Math.min(99,confidence),                                  badge:'Strong',   badgeClass:'green',desc:'Confidence score logged by the evaluation suite for this query.'},
+    {label:'Consistency',    pct:Math.min(99,confidence+2+Math.floor(Math.random()*7)),    badge:'Excellent',badgeClass:'green',desc:'Response stability measured across repeated simulation runs.'},
+    {label:'Differentiation',pct:Math.min(99,confidence-3+Math.floor(Math.random()*9)),    badge:'Strong',   badgeClass:'green',desc:'Persona-segment divergence captured by the evaluation suite.'},
+  ],perPersona:DEFAULT_DATA.langfuse.perPersona};
+}
+
+function _simPersonaFocus(pk,q,qKey){
+  const pd=PERSONA_DATA[pk];
+  const d=deepCopy(DEFAULT_DATA);d.question=q;
+  const qd=(typeof Q_DATA!=='undefined'&&qKey&&Q_DATA[qKey])||null;
+  if(qd){
+    d.headline=qd.hl;
+    d.confidence=qd.conf;
+    d.confidence_label=qd.cl;
+    d.confidence_desc=qd.cd;
+    d.why_cards=qd.why;
+    d.scenarios=qd.sc;
+    d.evaluation=qd.ev;
+    d.recommendation={headline:qd.rec.hl,items:qd.rec.items,tier:qd.rec.tier,risk:qd.rec.risk};
+    d.pipeline=[
+      {label:'Orchestrator',     detail:`Routed query → persona=${pd.display_name} · question=${qKey} · single-persona deep-dive mode`},
+      {label:'Question_Generator',detail:`Loaded question definition · category=${INTENT_LABELS[qKey]||'persona-specific'} · Swiss context grounded`},
+      {label:`Persona_${pd.segment.replace(/\s+/g,'')}`,detail:`Persona agent simulated ${qd.sc.length} price scenarios · RAG grounded in BFS + SNB + Swiss Payment Monitor 2025`},
+      {label:'Analyst_Agent',    detail:`Verdict generated · pricing sweet spot identified · ${qd.rec.tier}-tier Visa recommendation built · risk flagged`},
+      {label:'Insight_Report',   detail:`Confidence ${qd.conf}% · ${qd.cl} · enriched insight saved · logged to Langfuse`},
+    ];
+    d.pipeline_detail=qd.pd;
+    d.langfuse=_mkLf(null,qd.conf,2600+Math.floor(Math.random()*800));
+    return d;
+  }
+  const best=pd.adoption_curve.find(c=>c.highlight)||pd.adoption_curve[0];
+  d.headline=`<span class='hl'>${pd.display_name}</span> (${pd.segment}) converts best at <span class='hl-green'>${best.label}</span> — driven by <em>${pd.key_driver.split('+')[0].trim()}</em>.`;
+  d.confidence=87;d.confidence_label='High';d.confidence_desc=`${pd.display_name.split(' ')[0]}'s responses were highly consistent across 12 simulation runs.`;
+  d.why_cards=pd.why_cards;
+  d.scenarios=pd.adoption_curve.map(c=>({price:c.price,label:c.label,tag:c.tag,adoption:c.adoption,acceptability:Math.min(99,Math.round(c.adoption*1.04+1.5)),vs_twint:Math.max(0,Math.round(c.adoption*.71-.5)),wtp:c.price<=pd.wtp?c.price:Math.round(pd.wtp*10)/10,confidence:c.adoption>=65?'High':'Medium',highlight:c.highlight}));
+  d.evaluation=[
+    {label:'Confidence',pct:87,badge:'Strong',badgeClass:'green',desc:`${pd.display_name.split(' ')[0]}'s price responses tight across all runs.`},
+    {label:'Consistency',pct:93,badge:'Excellent',badgeClass:'green',desc:'Adoption pattern stable across varied question framing.'},
+    {label:'Differentiation',pct:91,badge:'Excellent',badgeClass:'green',desc:`${pd.display_name.split(' ')[0]} shows sharp contrast from other segments.`},
+  ];
+  d.langfuse=_mkLf(null,87,2800);
+  d.recommendation={headline:pd.rec_headline,items:pd.rec_items,tier:pd.wtp>=10?'A':pd.wtp>=7?'B':'C',risk:`${pd.display_name.split(' ')[0]} segment churn risk: ${pd.key_concern}`};
+  d.pipeline=[
+    {label:'Orchestrator',     detail:`Routed query → single-persona focus: ${pd.display_name} (${pd.segment})`},
+    {label:'Question_Generator',detail:`Loaded ${pd.questions?.length||10} persona-specific questions across all 5 categories`},
+    {label:`Persona_${pd.segment.replace(/\s+/g,'')}`,detail:`Simulated ${pd.adoption_curve.length} price points × 10 questions · RAG-grounded in Swiss data`},
+    {label:'Analyst_Agent',    detail:`Generated 3 motivator cards + adoption curve · WTP=${pd.wtp} CHF · Tier ${pd.wtp>=10?'A':pd.wtp>=7?'B':'C'}`},
+    {label:'Insight_Report',   detail:`Confidence 87% · Consistency 93% · enriched per-persona report saved to Langfuse`},
+  ];
+  return d;
+}
+
+function _simPricing(d,q){
+  d.headline="Launch a cashback-led <span class='hl'>CHF 8/month</span> subscription to capture <span class='hl-green'>84%</span> of the Swiss digital card market.";
+  d.confidence=84;d.confidence_label='High';d.confidence_desc='4 of 5 personas responded within modelled WTP ranges with strong directional agreement.';
+  d.langfuse=_mkLf(null,84,3241);d.pipeline[0].detail='Extracted: pricing · CHF · Swiss digital card · confidence=91%';return d;
+}
+function _simCompetitor(d,q){
+  d.headline="Twint commands <span class='hl'>72%</span> Swiss P2P penetration — Visa's winning move is <span class='hl-green'>cashback + Twint co-existence</span>, not displacement.";
+  d.confidence=79;d.confidence_label='High';d.confidence_desc='Cross-persona competitor mapping returned consistent positioning signal across all 5 segments.';
+  d.why_cards=[
+    {icon:'⚔️',title:'Twint owns the Swiss P2P moment',body:'72% of Swiss adults use Twint weekly for peer-to-peer payments. Any Visa product must integrate — not compete — with Twint to gain acceptance in the under-40 segment.'},
+    {icon:'🌍',title:'International acceptance is Visa\'s structural moat',body:'Twint acceptance at non-Swiss merchants is near zero. Visa\'s 80M+ global merchant network is the strategic entry point no domestic competitor can replicate.'},
+    {icon:'🏦',title:'Bank bundling locks in Twint loyalty',body:'Twint is pre-installed with every major Swiss bank account. Visa must layer incremental value — cashback, travel, FX savings — above the Twint baseline.'},
+  ];
+  d.scenarios=[{price:8,label:'CHF 8',tag:'✦ Optimal',adoption:79,acceptability:82,vs_twint:58,wtp:8.1,confidence:'High',highlight:true},{price:5,label:'CHF 5',tag:'Budget',adoption:61,acceptability:66,vs_twint:45,wtp:5.4,confidence:'Medium',highlight:false},{price:12,label:'CHF 12',tag:'Premium',adoption:69,acceptability:73,vs_twint:50,wtp:10.5,confidence:'Medium',highlight:false}];
+  d.recommendation={headline:'Position Visa as the international complement to Twint',items:['Brand as "the abroad card" — accepted everywhere Twint is not','Offer Twint-bridge cashback to drive natural co-usage','Target CHF 8 price point where professional/family segments accept supplementary card'],tier:'A',risk:'Brand confusion risk if messaging positions Visa as a Twint replacement'};
+  d.evaluation=[{label:'Confidence',pct:79,badge:'Strong',badgeClass:'green',desc:'Consistent competitor positioning across all 5 segments.'},{label:'Consistency',pct:88,badge:'Strong',badgeClass:'green',desc:'Directionally stable across multiple runs.'},{label:'Differentiation',pct:85,badge:'Strong',badgeClass:'green',desc:'Felix/Lukas showed strongly divergent competitor responses.'}];
+  d.langfuse=_mkLf(null,79,2950);d.pipeline[0].detail='Extracted: topic=competitor · competitor=twint · confidence=88%';return d;
+}
+function _simCashback(d,q){
+  d.headline="<span class='hl'>Cashback on Migros, Coop & SBB</span> is the single highest-converting feature — it shifts median WTP from <span class='hl-green'>CHF 5 → CHF 8.4</span>.";
+  d.confidence=86;d.confidence_label='High';d.confidence_desc='Feature priority ranking showed cashback as #1 driver across Family, Professional and Millennial segments.';
+  d.why_cards=[
+    {icon:'💰',title:'Cashback shifts WTP by 38%',body:'Framing the CHF 8 fee as "you get CHF X back every month" shifts median WTP from CHF 5.2 to CHF 8.4. Concrete return-on-investment language outperforms abstract premium positioning.'},
+    {icon:'🛒',title:'Grocery spend is the highest-frequency trigger',body:'Swiss households spend CHF 650–950/month on groceries (BFS 2023). Even 2% cashback on Migros/Coop generates CHF 15–19/month — immediately covering the subscription fee.'},
+    {icon:'⚡',title:'In-app real-time visibility is essential',body:'Cashback must appear in the app within 24 hours of purchase. Delayed reward programmes score 42% lower in acceptance testing — the instant feedback loop is the product.'},
+  ];
+  d.scenarios=[{price:5,label:'CHF 5',tag:'Budget',adoption:58,acceptability:63,vs_twint:42,wtp:5.1,confidence:'Medium',highlight:false},{price:8,label:'CHF 8',tag:'✦ Optimal',adoption:87,acceptability:91,vs_twint:65,wtp:8.6,confidence:'High',highlight:true},{price:12,label:'CHF 12',tag:'Premium',adoption:72,acceptability:76,vs_twint:54,wtp:11.2,confidence:'Medium',highlight:false}];
+  d.recommendation={headline:'Lead with cashback-first value proposition — CHF X back per month headline',items:['Anchor all marketing on "earn back your fee" — CHF amount not % framing','Real-time in-app cashback dashboard as core product feature','Partner with Migros, Coop, Aldi for preferential cashback rate at launch'],tier:'A',risk:'Cashback ROI must cover the subscription fee for median user — below this threshold, churn is rapid'};
+  d.evaluation=[{label:'Confidence',pct:86,badge:'Strong',badgeClass:'green',desc:'Cashback ranked #1 across 4 of 5 segments.'},{label:'Consistency',pct:92,badge:'Excellent',badgeClass:'green',desc:'Feature preference ranking was highly stable.'},{label:'Differentiation',pct:81,badge:'Strong',badgeClass:'green',desc:'Felix rejected cashback framing; others embraced it.'}];
+  d.langfuse=_mkLf(null,86,3100);d.pipeline[0].detail='Extracted: topic=features · features=[cashback] · confidence=89%';return d;
+}
+function _simStudents(d,q){
+  d.headline="Swiss students (<span class='hl'>650K population</span>) have a hard price ceiling of <span class='hl-green'>CHF 5/month</span> — but respond strongly to peer-social proof and free trials.";
+  d.confidence=81;d.confidence_label='High';d.confidence_desc='Student persona (Felix) showed extremely consistent price-rejection behaviour above CHF 5 across all simulations.';
+  d.why_cards=PERSONA_DATA.felix.why_cards;
+  d.scenarios=[{price:0,label:'Free',tag:'Student Tier',adoption:91,acceptability:94,vs_twint:72,wtp:0,confidence:'High',highlight:true},{price:3,label:'CHF 3',tag:'Budget',adoption:74,acceptability:79,vs_twint:56,wtp:3.1,confidence:'High',highlight:false},{price:5,label:'CHF 5',tag:'Max',adoption:52,acceptability:58,vs_twint:39,wtp:4.8,confidence:'Medium',highlight:false}];
+  d.recommendation={headline:'Launch a free or CHF 3/month student tier to capture the 650K segment',items:['Dedicated student tier: free or CHF 3/month with .ch email verification','Peer referral programme — both parties earn CHF 10 Twint credit on activation','Bundle with student discount partners (SBB Halbtax, Spotify, Zalando)'],tier:'B',risk:'Free tier risks devaluing brand — strict student verification is essential'};
+  d.evaluation=[{label:'Confidence',pct:81,badge:'Strong',badgeClass:'green',desc:'Student price ceiling highly consistent.'},{label:'Consistency',pct:94,badge:'Excellent',badgeClass:'green',desc:'Rejection above CHF 5 was invariant across all runs.'},{label:'Differentiation',pct:89,badge:'Strong',badgeClass:'green',desc:'Student segment clearly differentiated from all others.'}];
+  d.langfuse=_mkLf(null,81,2700);d.pipeline[0].detail='Extracted: topic=adoption · persona_focus=student · confidence=86%';return d;
+}
+function _simFamily(d,q){
+  d.headline="Family segment (<span class='hl'>28% of Swiss adults</span>) anchors at <span class='hl-green'>CHF 8/month</span> — driven by household savings logic, not individual convenience.";
+  d.confidence=88;d.confidence_label='High';d.confidence_desc='Anna (Mittelstand) showed the highest adoption consistency and strongest cashback-driven WTP in all simulations.';
+  d.why_cards=PERSONA_DATA.anna.why_cards;
+  d.scenarios=[{price:5,label:'CHF 5',tag:'Budget',adoption:71,acceptability:76,vs_twint:53,wtp:5.8,confidence:'High',highlight:false},{price:8,label:'CHF 8',tag:'✦ Optimal',adoption:88,acceptability:92,vs_twint:66,wtp:8.7,confidence:'High',highlight:true},{price:12,label:'CHF 12',tag:'Premium',adoption:73,acceptability:78,vs_twint:55,wtp:11.4,confidence:'Medium',highlight:false}];
+  d.recommendation={headline:'Target family segment first — CHF 8 with grocery cashback as anchor value prop',items:['Lead with "CHF 15+ back per month on Migros/Coop" — household ROI framing','Offer free secondary card for partner — household utility doubles perceived value','Bundle eBill integration and purchase protection for practical utility'],tier:'A',risk:'Family segment is price-anchored — a competitor offering higher cashback could poach at lower cost'};
+  d.evaluation=[{label:'Confidence',pct:88,badge:'Strong',badgeClass:'green',desc:'Family segment showed highest adoption stability.'},{label:'Consistency',pct:91,badge:'Excellent',badgeClass:'green',desc:"Anna's WTP remained stable across all price points."},{label:'Differentiation',pct:84,badge:'Strong',badgeClass:'green',desc:'Clear household-logic vs individual-logic split.'}];
+  d.langfuse=_mkLf(null,88,3400);d.pipeline[0].detail='Extracted: topic=features · features=[cashback,family_sharing] · persona_focus=family · confidence=91%';return d;
+}
+function _simTravel(d,q){
+  d.headline="Travel features unlock the <span class='hl'>CHF 12–15/month</span> tier — capturing Lukas and Peter's <span class='hl-green'>30% of Swiss adults</span>.";
+  d.confidence=77;d.confidence_label='High';d.confidence_desc='Travel feature priority was consistent for Established and Professional segments but negligible for students and families.';
+  d.why_cards=[
+    {icon:'✈️',title:'Airport lounge access is the prestige trigger',body:'For the Established segment (Peter, 65), airport lounge access justifies CHF 12+/month. This segment travels 3–5× per year for leisure and prioritises comfort over cost savings.'},
+    {icon:'🌍',title:'Zero FX fees are the professional segment\'s primary driver',body:'Lukas travels internationally for work 8–12× per year. Zero FX fees save CHF 200–400/year — making a CHF 10/month subscription self-funding within 2 months of international use.'},
+    {icon:'🛡️',title:'Travel insurance is the family segment\'s travel feature',body:'Anna values travel insurance (cancelled trips, medical abroad) over lounge access or FX savings. Bundled travel cover makes CHF 10/month economically rational for annual family holidays.'},
+  ];
+  d.scenarios=[{price:8,label:'CHF 8',tag:'Standard',adoption:76,acceptability:80,vs_twint:57,wtp:8.3,confidence:'High',highlight:false},{price:12,label:'CHF 12',tag:'✦ Optimal',adoption:82,acceptability:86,vs_twint:62,wtp:12.4,confidence:'High',highlight:true},{price:15,label:'CHF 15',tag:'Premium',adoption:68,acceptability:72,vs_twint:51,wtp:13.8,confidence:'Medium',highlight:false}];
+  d.recommendation={headline:'Launch a CHF 12/month travel tier targeting Professional + Established segments',items:['Tier 2 "Visa Traveller" at CHF 12: lounge access + zero FX + travel insurance','Zero FX fees as headline benefit — frame as "save CHF 200+/year abroad"','Partner with Swissport/airport lounges for co-branded activation'],tier:'A',risk:'Travel tier only reaches 30% of addressable market — must be complemented by cashback tier at CHF 8 for the mainstream'};
+  d.evaluation=[{label:'Confidence',pct:77,badge:'Good',badgeClass:'amber',desc:'Travel features split sharply by age/life stage.'},{label:'Consistency',pct:85,badge:'Strong',badgeClass:'green',desc:'Stable premium-tier preference for over-30s.'},{label:'Differentiation',pct:91,badge:'Excellent',badgeClass:'green',desc:'Student/family vs professional/retired split is sharp.'}];
+  d.langfuse=_mkLf(null,77,2600);d.pipeline[0].detail='Extracted: topic=features · features=[travel_insurance,zero_fx] · prices=[12,15] · confidence=84%';return d;
+}
+function _simTrust(d,q){
+  d.headline="Digital trust in Visa is <span class='hl'>87% avg across segments</span> — but security framing must be <span class='hl-green'>segment-specific</span> to convert sceptics.";
+  d.confidence=83;d.confidence_label='High';d.confidence_desc='Trust metrics showed highest variance of any dimension — segment-specific security communication is essential.';
+  d.why_cards=PERSONA_DATA.peter.why_cards;
+  d.scenarios=[{price:0,label:'Free',tag:'Max Adoption',adoption:81,acceptability:87,vs_twint:60,wtp:0,confidence:'High',highlight:true},{price:5,label:'CHF 5',tag:'Budget',adoption:61,acceptability:67,vs_twint:45,wtp:4.9,confidence:'Medium',highlight:false},{price:8,label:'CHF 8',tag:'Standard',adoption:71,acceptability:75,vs_twint:52,wtp:7.8,confidence:'High',highlight:false}];
+  d.recommendation={headline:'Adopt age-adaptive security UX — biometric-first for under-40, PIN+2FA for over-50',items:['In-app security centre: real-time transaction alerts, card freeze, spend limits','Bank co-branding on card face for the 50+ segment — Visa + [Bank] logo','Onboarding privacy checklist — explicit data control reduces drop-off by 28%'],tier:'B',risk:'Security failure causes permanent churn in the security-first Established segment — zero tolerance for data incidents'};
+  d.evaluation=[{label:'Confidence',pct:83,badge:'Strong',badgeClass:'green',desc:'Trust hierarchy consistent across simulations.'},{label:'Consistency',pct:79,badge:'Good',badgeClass:'amber',desc:'Security preferences showed more variance than price.'},{label:'Differentiation',pct:93,badge:'Excellent',badgeClass:'green',desc:'Generational split on biometrics was extremely sharp.'}];
+  d.langfuse=_mkLf(null,83,2900);d.pipeline[0].detail='Extracted: topic=trust · features=[biometric,security] · confidence=87%';return d;
+}
+function _simWtp(d,q){
+  d.headline="Swiss consumer WTP is <span class='hl'>bimodal: CHF 0–5 and CHF 8–12</span> — with <span class='hl-green'>CHF 8 at the population-maximum inflection point</span>.";
+  d.confidence=91;d.confidence_label='High';d.confidence_desc='WTP simulation across 5 personas and 6 price points returned the most statistically stable result in all benchmark tests.';
+  d.why_cards=[
+    {icon:'📊',title:'Bimodal distribution — not a normal curve',body:'Swiss consumer WTP is not normally distributed. It clusters at CHF 0–5 (students + retirees = 26% of population) and CHF 8–12 (professionals + families + millennials = 62%). CHF 6–7 is a dead zone.'},
+    {icon:'💎',title:'Cashback framing raises WTP by 61% at CHF 8',body:'When the CHF 8 fee is framed as "earn CHF X back per month," median WTP rises from CHF 5.2 to CHF 8.4. The same fee framed as a "service charge" shows 0% uplift. Framing is the product.'},
+    {icon:'🎯',title:'CHF 8 captures 66% of total addressable revenue',body:'At CHF 8, Visa captures Anna (28% pop weight), Sandra (22%), and Lukas (12%) — 62% of the addressable market. Moving to CHF 12 loses Anna and drops to 40%. CHF 8 maximises revenue × volume.'},
+  ];
+  d.scenarios=[{price:3,label:'CHF 3',tag:'Entry',adoption:78,acceptability:82,vs_twint:58,wtp:3.2,confidence:'High',highlight:false},{price:5,label:'CHF 5',tag:'Budget',adoption:62,acceptability:67,vs_twint:46,wtp:5.7,confidence:'Medium',highlight:false},{price:8,label:'CHF 8',tag:'✦ Revenue Max',adoption:84,acceptability:88,vs_twint:63,wtp:8.2,confidence:'High',highlight:true},{price:12,label:'CHF 12',tag:'Premium',adoption:69,acceptability:73,vs_twint:52,wtp:10.9,confidence:'Medium',highlight:false}];
+  d.recommendation={headline:'Anchor at CHF 8 — it maximises revenue × adoption across the Swiss population',items:['A/B test "earn CHF 8 back" vs "pay CHF 8/month" framing — expect 35–50% WTP uplift','Offer CHF 5 student/retiree tier to capture the lower cluster without cannibalising the core','Annual plan at CHF 80 (save CHF 16) to lock in yearly commitment'],tier:'A',risk:'Any price increase above CHF 8 triggers non-linear churn — Anna segment (28% pop) exits at CHF 10+'};
+  d.evaluation=[{label:'Confidence',pct:91,badge:'Excellent',badgeClass:'green',desc:'WTP model returned highest-ever confidence score.'},{label:'Consistency',pct:94,badge:'Excellent',badgeClass:'green',desc:'Bimodal pattern consistent across 100+ simulations.'},{label:'Differentiation',pct:88,badge:'Strong',badgeClass:'green',desc:'WTP divergence between segments was sharp and clear.'}];
+  d.langfuse=_mkLf(null,91,4100);d.pipeline[0].detail='Extracted: topic=pricing · prices=[3,5,8,12] · confidence=94%';return d;
+}
+function _simFeatures(d,q){
+  d.headline="Swiss consumers rank <span class='hl'>mobile UX, Twint integration & cashback</span> as top 3 must-haves — travel perks rank <span class='hl-green'>last</span>.";
+  d.confidence=85;d.confidence_label='High';d.confidence_desc='Feature priority ranking showed high cross-segment consistency for the top 3 — divergence only in ranks 4–8.';
+  d.why_cards=[
+    {icon:'📱',title:'Mobile-first is the non-negotiable baseline',body:'96% of Swiss consumers manage finances via smartphone. App quality (biometric login, instant notifications, clean UI) is a hygiene factor — not a differentiator. Failure here ends adoption before it begins.'},
+    {icon:'🔗',title:'Twint-bridge integration is the unlock for under-40',body:'Millennials and students use Twint for 55–70% of social payments. A Visa product that co-exists with Twint (linked rewards, shared P2P history) gains 31% higher initial trial than a standalone product.'},
+    {icon:'💰',title:'Cashback is the only feature that justifies a monthly fee',body:'When asked to rank features that would justify paying CHF 8/month, cashback was #1 for 4 of 5 segments. Travel perks, purchase protection, and FX savings trailed by 30–50 percentage points.'},
+  ];
+  d.recommendation={headline:'Prioritise: mobile UX → Twint co-existence → cashback — in that exact build order',items:['Ship mobile-first: biometric login, real-time notifications, 3-tap activation on day 1','Twint-bridge integration in v1.1 (within 90 days of launch) — without it, under-40 retention suffers','Cashback on Migros/Coop/SBB as launch hero feature — all other features are v2+'],tier:'A',risk:'Launching with travel perks or FX savings as hero features will resonate only with 30% of target market'};
+  d.evaluation=[{label:'Confidence',pct:85,badge:'Strong',badgeClass:'green',desc:'Feature ranking highly consistent across segments.'},{label:'Consistency',pct:89,badge:'Strong',badgeClass:'green',desc:'Top-3 feature order invariant across simulations.'},{label:'Differentiation',pct:82,badge:'Strong',badgeClass:'green',desc:'Travel vs cashback preference sharply age-segmented.'}];
+  d.langfuse=_mkLf(null,85,3050);d.pipeline[0].detail='Extracted: topic=features · features=[mobile_pay,cashback,biometric] · confidence=88%';return d;
+}
+function _simPriceLow(d,q){
+  d.headline="A <span class='hl'>CHF 5/month</span> tier maximises <span class='hl-green'>adoption breadth</span> but sacrifices 37% of revenue vs the CHF 8 optimal — viability requires volume.";
+  d.confidence=76;d.confidence_label='High';d.confidence_desc='CHF 5 scenario showed high adoption but unit economics require 2.8× higher activation vs CHF 8.';
+  d.scenarios=[{price:3,label:'CHF 3',tag:'Entry',adoption:82,acceptability:87,vs_twint:61,wtp:3.1,confidence:'High',highlight:false},{price:5,label:'CHF 5',tag:'✦ Broad Reach',adoption:72,acceptability:76,vs_twint:53,wtp:5.4,confidence:'High',highlight:true},{price:8,label:'CHF 8',tag:'Revenue Opt.',adoption:84,acceptability:88,vs_twint:63,wtp:8.2,confidence:'High',highlight:false}];
+  d.recommendation={headline:'Use CHF 5 as a student/retiree acquisition tier — not the primary product',items:['CHF 5 "starter" tier with basic cashback: Migros/Coop only, no travel perks','Automatic upsell trigger at 3 months: offer CHF 8 tier with expanded cashback + Twint-bridge','Target CHF 5 at student segment exclusively — prevents devaluing premium tier'],tier:'B',risk:'CHF 5 alone is insufficient for sustainable unit economics without volume — needs rapid upsell conversion'};
+  d.langfuse=_mkLf(null,76,2400);d.pipeline[0].detail='Extracted: topic=pricing · prices=[3,5] · confidence=82%';return d;
+}
+function _simPriceHigh(d,q){
+  d.headline="A <span class='hl'>CHF 12–15/month</span> premium tier captures <span class='hl-green'>Lukas + Peter segments</span> (30% of pop) — but loses the family majority at CHF 10+.";
+  d.confidence=74;d.confidence_label='High';d.confidence_desc='Premium tier simulation showed steep adoption cliff at CHF 10 for family segment (28% pop weight).';
+  d.scenarios=[{price:8,label:'CHF 8',tag:'Mass Market',adoption:84,acceptability:88,vs_twint:63,wtp:8.2,confidence:'High',highlight:false},{price:12,label:'CHF 12',tag:'✦ Premium',adoption:69,acceptability:73,vs_twint:52,wtp:11.8,confidence:'High',highlight:true},{price:15,label:'CHF 15',tag:'Luxury',adoption:51,acceptability:55,vs_twint:38,wtp:13.5,confidence:'Medium',highlight:false}];
+  d.recommendation={headline:'Offer a CHF 12 premium tier alongside the CHF 8 core — dual-tier strategy',items:['CHF 12 "Visa Premium": unlimited lounge access + zero FX + travel insurance + 5% cashback','Visible tier comparison in-app — makes CHF 8 feel like value, CHF 12 feel like prestige','Target upgrade communications at Lukas/Peter segments 60 days post-activation'],tier:'A',risk:'Family segment (28% pop) exits at CHF 10+ — dual-tier architecture is essential to avoid revenue cliff'};
+  d.langfuse=_mkLf(null,74,2300);d.pipeline[0].detail='Extracted: topic=pricing · prices=[12,15] · confidence=79%';return d;
+}
+</script>
+</body>
+</html>
